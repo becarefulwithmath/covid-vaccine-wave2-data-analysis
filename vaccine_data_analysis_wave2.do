@@ -240,7 +240,7 @@ capture global explanations "..."//will be included into "contol" global
 //////////////////*************GLOBALS***************////////////
 global wealth "wealth_low wealth_high" //included into demogr
 global trust "trust_EU	trust_government	trust_neighbours	trust_doctors	trust_media	trust_family	trust_science" //included into demogr
-global demogr "male age age2 i.city_population secondary_edu higher_edu $wealth health_poor health_good $health_details had_covid covid_hospitalized covid_friends religious i.religious_freq status_unemployed status_pension status_student $trust"
+global demogr "male age age2 i.city_population secondary_edu higher_edu $wealth health_poor health_good $health_details had_covid covid_hospitalized covid_friends religious i.religious_freq status_unemployed status_pension status_student"
 global demogr_int "male age higher_edu"
 global emotions "e_happiness e_fear e_anger e_disgust e_sadness e_surprise"
 global risk "risk_overall risk_work risk_health"
@@ -330,11 +330,13 @@ est table m_1 m_2 m_3 m_4 m_5 m_6 m_7, b(%12.3f) var(20) star(.01 .05 .10) stats
 //result:yes/no order effects detected 
 /////****END********************************/////////
 
+ologit v_decision $order_effects
+
 quietly ologit v_decision $vaccine_vars 
 est store m_0
 quietly ologit v_decision $vaccine_vars $demogr 
 est store m_1
-quietly ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact $health_advice 
+quietly ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact $health_advice $trust
 est store m_2
 
 est table m_2 m_1 m_0, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
