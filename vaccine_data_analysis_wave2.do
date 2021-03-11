@@ -30,15 +30,24 @@ display "% of records with comments: " `comment'_count_percent
 
 //VACCINE PART DATA CLEANING
 rename (p37_1_r1	p37_1_r2	p37_1_r3		p37_1_r5	p37_1_r6	p37_1_r7 p37_1_r8_r8	p37_8_r1	p37_8_r2	p37_8_r3	p37_8_r4	p37) (v_producer_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested	v_p_pay0	v_p_gets70	v_p_pays10	v_p_pays70	v_decision) 
-global vaccine_vars "v_producer_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions	v_p_gets70	v_p_pays10	v_p_pays70" // i leave out scarcity -- sth that supposedly everybody knows. we can't estimate all because of ariadna's error anyway
-global vaccine_short "v_producer_reputation	v_efficiency	v_safety	v_scarcity	v_other_want_it	v_scientific_authority	v_ease_personal_restrictions"
+global vaccine_vars "v_producer_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested	v_p_gets70	v_p_pays10	v_p_pays70" // this refers to the previous wave: i leave out scarcity -- sth that supposedly everybody knows. we can't estimate all because of ariadna's error anyway
+global vaccine_short "v_producer_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested"
 global prices "v_p_gets70	v_p_pays10	v_p_pays70"
+
+pwcorr $vaccine_vars, sig
+egen sum_vaxx=rsum($vaccine_short)
+sum $vaccine_vars
+hist sum_vaxx, disc
+tab sum_vaxx
+stop
+
 
 //DEMOGRAPHICS DATA CLEANING
 //wojewodstwo is ommited, because of no theoretical reason to include it
 gen male=sex==2
-gen age2=age^2 //RK: doest it makes sense? it is age_category, not age in numbers
 rename (age year) (age_category age)
+replace age=2021-age
+gen age2=age^2 
 //later check consistency of answers
 
 rename (miasta wyksztalcenie) (city_population edu)
@@ -214,6 +223,9 @@ replace order_vaccine_persuasion=0 if order_vaccine_persuasio==. //RK:to not dro
 tab order_vaccine_persuasion //added into next global 
 
 
+replace covid_hosp=0 if covid_hosp==.a
+
+
 global order_effects "$g_order_emotions $order_trust $g_order_risk $g_order_worry $g_order_control $g_order_informed $g_order_estimations $g_order_conspiracy order_vaccine_persuasion"
 
 //TIME
@@ -240,7 +252,7 @@ capture global explanations "..."//will be included into "contol" global
 //////////////////*************GLOBALS***************////////////
 global wealth "wealth_low wealth_high" //included into demogr
 global trust "trust_EU	trust_government	trust_neighbours	trust_doctors	trust_media	trust_family	trust_science" //included into demogr
-global demogr "male age age2 i.city_population secondary_edu higher_edu $wealth health_poor health_good $health_details had_covid covid_hospitalized covid_friends religious i.religious_freq status_unemployed status_pension status_student"
+global demogr "male age age2 i.city_population secondary_edu higher_edu $wealth health_poor health_good $health_details had_covid covid_hospitalized covid_friends religious i.religious_freq status_unemployed status_pension status_student" 
 global demogr_int "male age higher_edu"
 global emotions "e_happiness e_fear e_anger e_disgust e_sadness e_surprise"
 global risk "risk_overall risk_work risk_health"
@@ -252,8 +264,8 @@ global voting "i.voting"
 global health_advice "mask_wearing distancing"
 global covid_impact "subj_est_cases_ln subj_est_death_l"
 global order_effects ""
-global vaccine_vars "v_producer_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions	v_p_gets70	v_p_pays10	v_p_pays70" // i leave out scarcity -- sth that supposedly everybody knows. we can't estimate all because of ariadna's error anyway
-global vaccine_short "v_producer_reputation	v_efficiency	v_safety	v_scarcity	v_other_want_it	v_scientific_authority	v_ease_personal_restrictions"
+// DEFINED (UND UPDATED TO NEW VERSION) BEFORE! global vaccine_vars "v_producer_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions	v_p_gets70	v_p_pays10	v_p_pays70" // i leave out scarcity -- sth that supposedly everybody knows. we can't estimate all because of ariadna's error anyway
+// global vaccine_short "v_producer_reputation	v_efficiency	v_safety	v_scarcity	v_other_want_it	v_scientific_authority	v_ease_personal_restrictions"
 global prices "v_p_gets70	v_p_pays10	v_p_pays70"
 
 //////////****order effects and interactions check**********/////
@@ -309,7 +321,7 @@ test $price_wealth
 //check for interactions: vaccine persuasive messages (producer from EU; vaccine safety + voting)
 //gen int_voting_prod=voting*v_producer_reputation
 //gen int_voting_safety=voting*v_safety
-quietly xi:ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact $health_advice $order_effects i.voting*v_producer_reputation i.voting*v_safety
+xi:ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact $health_advice $order_effects i.voting*v_producer_reputation i.voting*v_safety
 est store m_6
 test _IvotXv_pro_1 _IvotXv_pro_2 _IvotXv_pro_3 _IvotXv_pro_4 _IvotXv_pro_7 _IvotXv_pro_8 _IvotXv_pro_9 _IvotXv_saf_1 _IvotXv_saf_2 _IvotXv_saf_3 _IvotXv_saf_4 _IvotXv_saf_7 _IvotXv_saf_8 _IvotXv_saf_9
 
@@ -321,7 +333,7 @@ foreach manipulation in $vaccine_vars {
 	global int_consp_manip "$int_consp_manip `abb'_conspiracy" 	
 }
 dis "$int_consp_manip"
-quietly ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact $health_advice $order_effects $int_consp_manip
+ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact $health_advice $order_effects $int_consp_manip
 est store m_7
 test $int_consp_manip
 
