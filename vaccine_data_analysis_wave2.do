@@ -39,8 +39,6 @@ egen sum_vaxx=rsum($vaccine_short)
 sum $vaccine_vars
 hist sum_vaxx, disc
 tab sum_vaxx
-stop
-
 
 //DEMOGRAPHICS DATA CLEANING
 //wojewodstwo is ommited, because of no theoretical reason to include it
@@ -242,6 +240,7 @@ rename (p19_time p20_time p22_time p23_time p24_time p25_time p30cd_time p37_tim
 // [P39] Kto lub co mogłoby zmienić Twoją decyzję odnośnie zaszczepienia się na koronawirusa? Opisz poniżej.
 // [optional] [P21] Jakie czynniki mają główny wpływ na to, w jakiej mierze jesteś zaniepokojony/a pandemią koronawirusa? 
 //will be classified and set of explanations will be produced.
+capture export excel respondent_id v_decision open_ended_v_reasoning P380 open_ended_v_influencer P390 using "C:\Users\johns_000\Desktop\openendedquestionsforclassification.xls", firstrow(variables) replace
 //every explanation will be assosiated with a dummy variable
 rename p38 open_ended_v_reasoning
 rename p39 open_ended_v_influencer
