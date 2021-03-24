@@ -6,7 +6,8 @@ clear all
 // install package to import spss file
 // net from http://radyakin.org/transfer/usespss/beta
 //usespss "WNE_Pilotaz_N166.sav"
-//saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda data ver 2)\WNE_Pilotaz_N166_stata_format.dta", version(13)
+//usespss "WNE2_N3000.sav"
+//saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda data ver 2)\WNE2_N3000_stata_format.dta", version(13)
 
 //INTSALATION:
 //capture ssc install tabstatmat
@@ -14,7 +15,8 @@ clear all
 //WORKING FOLDER AND DATA
 capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda data ver 2)"
 capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda data ver 2)"
-use WNE_Pilotaz_N166_stata_format.dta, clear
+capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda data ver 2)"
+use WNE2_N3000_stata_format.dta, clear
 
 //comments review, count, %
 gen n_count=_N
@@ -38,7 +40,22 @@ pwcorr $vaccine_vars, sig
 egen sum_vaxx=rsum($vaccine_short)
 sum $vaccine_vars
 hist sum_vaxx, disc
-tab sum_vaxx
+tab sum_vaxx // seems ok
+
+capture drop no_manip
+gen no_manips=v_p_gets70==0 & v_p_pays10==0 & v_p_pays70==0 & v_p_pay0==0
+sum sum_vaxx if no_manips
+tab v_dec no_manips, col chi
+
+tab no_manips v_p_gets70 
+
+tab no_manips v_p_pays70 
+
+tab v_dec no_manips if v_p_gets70==0& v_p_pays70==0 & v_p_pays10==0, col chi
+
+ologit v_dec no_manips if no_manips | v_p_pay0==1
+
+ologit v_dec no_manips $vaccine_vars if no_manips | v_p_pay0==1
 
 //DEMOGRAPHICS DATA CLEANING
 //wojewodstwo is ommited, because of no theoretical reason to include it
@@ -98,26 +115,39 @@ rename p30_r1 distancing
 //EMOTIONS
 ren (p17_r1 p17_r2 p17_r3 p17_r4 p17_r5 p17_r6) (e_happiness e_fear e_anger e_disgust e_sadness e_surprise)
 global emotions "e_happiness e_fear e_anger e_disgust e_sadness e_surprise"
-
+foreach i in $emotions{
+tab `i'
+}
 //RISK ATTITUDES
 ren (p18_r1 p19_r1 p19_r2) (risk_overall risk_work risk_health)
 global risk "risk_overall risk_work risk_health"
-
+foreach i in $risk{
+tab `i'
+}
 //WORRY
 ren (p20_r1 p20_r2 p20_r3) (worry_covid worry_cold worry_unempl)
 global worry "worry_covid worry_cold worry_unempl"
-
+foreach i in $worry{
+tab `i'
+}
 //SUBJECTIVE CONTROL
 rename (p22_r1 p22_r2 p22_r3) (control_covid control_cold control_unempl)
 global control "control_covid control_cold control_unempl"
-
+foreach i in $control{
+tab `i'
+}
 //INFORMED ABOUT:
 rename (p23_r1 p23_r2 p23_r3) (informed_covid informed_cold informed_unempl)
 global informed "informed_covid informed_cold informed_unempl"
-
+foreach i in $informed{
+tab `i'
+}
 //CONSPIRACY
 rename (p30cd_r1 p30cd_r2 p30cd_r3) (conspiracy_general_info conspiracy_stats conspiracy_excuse)
 global conspiracy "conspiracy_general_info conspiracy_stats conspiracy_excuse"
+foreach i in $conspiracy{
+tab `i'
+}
 egen conspiracy_score=rowmean($conspiracy)
 //lets do general conspiracy score?
 
@@ -126,6 +156,7 @@ rename m20 voting
 replace voting=0 if voting==.a
 replace voting=8 if voting==5|voting==6
 global voting "i.voting"
+
 
 //covid impact estimations
 rename (p24 p25) (subj_est_cases subj_est_death)
@@ -138,6 +169,7 @@ replace subj_est_death_l=0 if subj_est_death_l==.
 //kind of check should be added here, some people did not get that deaths were in thouthands and cases in millions
 global covid_impact "subj_est_cases_ln subj_est_death_l"
 
+
 //[P40] Gdyby po pierwszych miesiącach szczepień potwierdziło się, że szczepionka jest skuteczna i bezpieczna, to byłbyś skłonny się zaszczepić? Zaznacz.
 rename p40 decision_change
 tab decision_change
@@ -145,7 +177,9 @@ tab decision_change
 
 //health status details:
 rename m9_1 health_vaccine_side_effects
+gen vaccine_extra_risky=health_vaccine_side_effects==1
 rename m9_2 health_covid_serious
+gen covid_extra_risky=health_covid_serious==1
 //"smoking categories consisted of “very light” (1–4 CPD), “light” (5–9 CPD), “moderate” (10–19 CPD), and “heavy” (20+ CPD) Rostron, Brian L., et al. "Changes in Cigarettes per Day and Biomarkers of Exposure Among US Adult Smokers in the Population Assessment of Tobacco and Health Study Waves 1 and 2 (2013–2015)." Nicotine and Tobacco Research 22.10 (2020): 1780-1787."
 rename m9_3 health_smoking_yesno
 rename m9_3a health_smoking_howmany
@@ -155,11 +189,30 @@ gen health_smoking_vlight=health_smoking_howmany>0&health_smoking_howmany<5
 gen health_smoking_light=health_smoking_howmany>4&health_smoking_howmany<10
 gen health_smoking_moderate=health_smoking_howmany>9&health_smoking_howmany<20
 gen health_smoking_heavy=health_smoking_howmany>19
-global health_details "health_vaccine_side_effects health_covid_serious health_smoking_light health_smoking_moderate health_smoking_heavy"
+global health_details "vaccine_extra_risky covid_extra_risky health_smoking_light health_smoking_moderate health_smoking_heavy"
 //above global will be included into global demogr
 
+foreach i in $health_details{
+tab `i'
+}
+
 //trust
-rename (trust_r1	trust_r2	trust_r3	trust_r4	trust_r5	trust_r6	trust_r7) (trust_EU	trust_government	trust_neighbours	trust_doctors	trust_media	trust_family	trust_science)
+rename (trust_r1	trust_r2	trust_r3	trust_r4	trust_r5	trust_r6	trust_r7) (trust_EU	trust_gov	trust_neigh	trust_doctors	trust_media	trust_family	trust_science)
+global trust "trust_EU	trust_gov	trust_neigh	trust_doctors	trust_media	trust_family	trust_science" //included into demogr
+foreach i in $trust{
+tab `i'
+}
+
+capture drop trust_*_Y trust_*_N
+
+global trust_dummies ""
+foreach var in $trust{
+gen `var'_Y=`var'==1
+gen `var'_N=`var'==3
+global trust_dummies "$trust_dummies `var'_Y `var'_N"
+}
+
+sum $trust_dummies
 
 //order
 // robustness check: to add order effects for emotions
@@ -168,6 +221,7 @@ rename p17_order order_emotions
 replace order_emotions=subinstr(order_emotions,"r","",.)
 split order_emotions, p(",")
 global g_order_emotions "order_emotions1 order_emotions2 order_emotions3 order_emotions4 order_emotions5 order_emotions6"
+
 destring $g_order_emotions, replace
 // robustness check: to add order effects for trust questions
 //[trust_gov, trust_neighbours, trust_doctors, trust_media, trust_family, trust_scientists] Czy ma Pan zaufanie do?: 
@@ -250,7 +304,6 @@ capture global explanations "..."//will be included into "contol" global
 
 //////////////////*************GLOBALS***************////////////
 global wealth "wealth_low wealth_high" //included into demogr
-global trust "trust_EU	trust_government	trust_neighbours	trust_doctors	trust_media	trust_family	trust_science" //included into demogr
 global demogr "male age age2 i.city_population secondary_edu higher_edu $wealth health_poor health_good $health_details had_covid covid_hospitalized covid_friends religious i.religious_freq status_unemployed status_pension status_student" 
 global demogr_int "male age higher_edu"
 global emotions "e_happiness e_fear e_anger e_disgust e_sadness e_surprise"
@@ -261,19 +314,34 @@ global informed "informed_covid informed_cold informed_unempl"
 global conspiracy "conspiracy_general_info conspiracy_stats conspiracy_excuse" //we also have conspiracy_score
 global voting "i.voting"
 global health_advice "mask_wearing distancing"
+foreach i in $health_advice{
+tab `i'
+}
 global covid_impact "subj_est_cases_ln subj_est_death_l"
 global order_effects ""
 // DEFINED (UND UPDATED TO NEW VERSION) BEFORE! global vaccine_vars "v_producer_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions	v_p_gets70	v_p_pays10	v_p_pays70" // i leave out scarcity -- sth that supposedly everybody knows. we can't estimate all because of ariadna's error anyway
 // global vaccine_short "v_producer_reputation	v_efficiency	v_safety	v_scarcity	v_other_want_it	v_scientific_authority	v_ease_personal_restrictions"
 global prices "v_p_gets70	v_p_pays10	v_p_pays70"
 
-//////////****order effects and interactions check**********/////
-quietly ologit v_decision $vaccine_vars $demogr 
+//////////****ORDERED LOGITS**********/////
+quietly ologit v_decision $vaccine_vars $demogr [pweight=waga]
 est store m_1
 
-quietly ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting  $control $informed conspiracy_score $covid_impact $health_advice $order_effects
-est store m_2
-test $vaccine_vars
+quietly ologit v_decision $vaccine_vars $demogr $voting [pweight=waga] 
+est store m_21
+
+quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry  $trust_dummies  [pweight=waga]
+est store m_22
+test $emotions $risk $worry $trust_dummies 
+
+quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice [pweight=waga]
+est store m_23
+test $control $informed conspiracy_score $covid_impact $health_advice
+
+ologit v_decision no_manips $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice
+
+
+// XXXXXXXXXXXXXXXXXXXXXXX add order effects
 
 //check for interactions: vaccine persuasive messages set 1 + demographics
 global interactions ""
@@ -285,7 +353,7 @@ foreach manipulation in $vaccine_vars {
 }
 }
 dis "$interactions"
-quietly ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact $health_advice $order_effects $interactions
+quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice $interactions
 est store m_3
 test $interactions
 
@@ -300,7 +368,7 @@ foreach manipulation in $vaccine_short {
 }
 }
 dis "$int_manips"
-quietly ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact $health_advice $order_effects $int_manips
+quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice $int_manips
 est store m_4
 test $int_manips
 
@@ -313,17 +381,18 @@ foreach price in $prices {
 }
 }
 dis "$price_wealth"
-quietly ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact $health_advice $order_effects $price_wealth
+quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice $price_wealth
 est store m_5
 test $price_wealth
 
 //check for interactions: vaccine persuasive messages (producer from EU; vaccine safety + voting)
 //gen int_voting_prod=voting*v_producer_reputation
 //gen int_voting_safety=voting*v_safety
-xi:ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact $health_advice $order_effects i.voting*v_producer_reputation i.voting*v_safety
+xi: quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice  i.voting*v_producer_reputation i.voting*v_safety
 est store m_6
 test _IvotXv_pro_1 _IvotXv_pro_2 _IvotXv_pro_3 _IvotXv_pro_4 _IvotXv_pro_7 _IvotXv_pro_8 _IvotXv_pro_9 _IvotXv_saf_1 _IvotXv_saf_2 _IvotXv_saf_3 _IvotXv_saf_4 _IvotXv_saf_7 _IvotXv_saf_8 _IvotXv_saf_9
 
+/*
 //check for interactions: vaccine persuasive messages set 1 + conspiracy score
 global int_consp_manip ""
 foreach manipulation in $vaccine_vars {
@@ -332,25 +401,39 @@ foreach manipulation in $vaccine_vars {
 	global int_consp_manip "$int_consp_manip `abb'_conspiracy" 	
 }
 dis "$int_consp_manip"
-ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact $health_advice $order_effects $int_consp_manip
+quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice $int_consp_manip
 est store m_7
 test $int_consp_manip
+*/
 
-est table m_1 m_2 m_3 m_4 m_5 m_6 m_7, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
+
+capture drop i_v*trust_*
+global int_trust_manip ""
+foreach manipulation in $vaccine_vars {
+	foreach trust in $trust_dummies {
+	local abb=substr("`manipulation'",1,14)
+	gen i_`abb'_`trust'=`abb'*`trust'	
+	global int_trust_manip "$int_trust_manip i_`abb'_`trust'" 	
+}
+}
+
+dis "$int_trust_manip"
+quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice $int_trust_manip
+est store m_8
+test $int_trust_manip
+
+// XXXXXXXXXXXXXX maybe only gov, scientists?
+
+
+est table m_1 m_21 m_22 m_23, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
+// m_3 m_4 m_5 m_6 m_7, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
 //result:yes/no interactions detected
 //result:yes/no order effects detected 
 /////****END********************************/////////
 
-ologit v_decision $order_effects
-
-quietly ologit v_decision $vaccine_vars 
-est store m_0
-quietly ologit v_decision $vaccine_vars $demogr 
-est store m_1
-quietly ologit v_decision $vaccine_vars $demogr $emotions $risk $worry $voting $control $informed conspiracy_score $covid_impact $health_advice $trust
-est store m_2
-
 est table m_2 m_1 m_0, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
+
+ologit decision_change $demogr $voting $emotions
 
 // FIGURES
 tab v_decision, generate(dec)
