@@ -36,6 +36,23 @@ global vaccine_vars "v_producer_reputation	v_efficiency	v_safety		v_other_want_i
 global vaccine_short "v_producer_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested"
 global prices "v_p_gets70	v_p_pays10	v_p_pays70"
 
+gen vaxx_cert_yes =v_dec==4
+gen vaxx_rather_yes =v_dec==3
+gen vaxx_rather_no =v_dec==2
+gen vaxx_cert_no =v_dec==1
+
+gen vaxx_yes=vaxx_certainly_yes+vaxx_rather_yes
+
+
+sum vaxx_cert_yes [weight=waga]
+sum vaxx_rather_yes [weight=waga]
+sum vaxx_rather_no [weight=waga]
+sum vaxx_cert_no [weight=waga]
+
+
+sum vaxx_yes [weight=waga]
+sum vaxx_yes [weight=waga] if male==1 & age>60
+
 pwcorr $vaccine_vars, sig
 egen sum_vaxx=rsum($vaccine_short)
 sum $vaccine_vars
@@ -149,6 +166,9 @@ foreach i in $conspiracy{
 tab `i'
 }
 egen conspiracy_score=rowmean($conspiracy)
+
+gen consp_stats_high=conspiracy_sta==6|conspiracy_st==7
+sum consp_stats_high [weight=waga]
 //lets do general conspiracy score?
 
 //VOTING
@@ -174,6 +194,11 @@ global covid_impact "subj_est_cases_ln subj_est_death_l"
 rename p40 decision_change
 tab decision_change
 //this variable will be included into analysis to see which factors (e.g. emotions) are assotiated with vaccination decision change
+gen change_yes=decision_change==3|decision_change==4
+replace change_yes=. if decision_change==.a
+
+sum change_yes [weight=waga]
+sum change_yes 
 
 //health status details:
 rename m9_1 health_vaccine_side_effects
