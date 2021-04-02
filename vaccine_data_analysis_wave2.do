@@ -1,14 +1,14 @@
 // ideas:
 // robustness check: to compare distrubution of answers for Ariadna data
 // robustness check: to drop out 5% of the fastest subjects
-
+// ssc install scheme-burd, replace
 clear all
 // install package to import spss file
 // net from http://radyakin.org/transfer/usespss/beta
 //usespss "WNE_Pilotaz_N166.sav"
 //usespss "WNE2_N3000.sav"
 //saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda data ver 2)\WNE2_N3000_stata_format.dta", version(13)
-
+set scheme burd
 //INTSALATION:
 //capture ssc install tabstatmat
 
@@ -41,8 +41,9 @@ gen vaxx_rather_yes =v_dec==3
 gen vaxx_rather_no =v_dec==2
 gen vaxx_cert_no =v_dec==1
 
-gen vaxx_yes=vaxx_certainly_yes+vaxx_rather_yes
+gen vaxx_yes=vaxx_cert_yes+vaxx_rather_yes
 
+tabstat vaxx_yes [weight=waga], statistics( mean ) by(woj)
 
 sum vaxx_cert_yes [weight=waga]
 sum vaxx_rather_yes [weight=waga]
@@ -51,7 +52,7 @@ sum vaxx_cert_no [weight=waga]
 
 
 sum vaxx_yes [weight=waga]
-sum vaxx_yes [weight=waga] if male==1 & age>60
+// sum vaxx_yes [weight=waga] if male==1 & age>60
 
 pwcorr $vaccine_vars, sig
 egen sum_vaxx=rsum($vaccine_short)
@@ -69,16 +70,21 @@ tab no_manips v_p_gets70
 tab no_manips v_p_pays70 
 
 tab v_dec no_manips if v_p_gets70==0& v_p_pays70==0 & v_p_pays10==0, col chi
-
 ologit v_dec no_manips if no_manips | v_p_pay0==1
+
+
+
+ologit v_dec sum_vaxx if no_manips | v_p_pay0==1
 
 ologit v_dec no_manips $vaccine_vars if no_manips | v_p_pay0==1
 
 //DEMOGRAPHICS DATA CLEANING
 //wojewodstwo is ommited, because of no theoretical reason to include it
 gen male=sex==2
-rename (age year) (age_category age)
-replace age=2021-age
+rename (age) (age_category)
+gen age=2021-year
+
+
 gen age2=age^2 
 //later check consistency of answers
 
@@ -86,6 +92,15 @@ rename (miasta wyksztalcenie) (city_population edu)
 gen elementary_edu=edu==1|edu==2
 gen secondary_edu=edu==3|edu==4
 gen higher_edu=edu==5|edu==6|edu==7
+
+gen edu_short=1*ele+2*sec+3*higher
+
+
+label define e_s 1 "podstawowe" 2 "średnie" 3 "wyższe"
+label values edu_short e_s
+
+label define sex_eng 1 "female" 2 "male"
+label define e_s_eng 1 "primary" 2 "secondary" 3 "higher"
 
 rename m8 income
 gen wealth_low=income==1|income==2
@@ -98,8 +113,13 @@ rename m9 health_state
 gen health_poor=health_state==1|health_state==2
 gen health_good=health_state==4|health_state==5
 
-gen had_covid=(5-p31)
-rename p31 had_covid_initial
+
+rename p31 had_covid
+
+gen tested_pos_covid=had_covid==1
+gen thinks_had_covid=had_covid==2
+
+// rename p31 had_covid_initial
 
 rename p32 covid_hospitalized
 tab covid_hospitalized
@@ -144,13 +164,13 @@ tab `i'
 //WORRY
 ren (p20_r1 p20_r2 p20_r3) (worry_covid worry_cold worry_unempl)
 global worry "worry_covid worry_cold worry_unempl"
-foreach i in $worry{
+foreach i in worry_cov{
 tab `i'
 }
 //SUBJECTIVE CONTROL
 rename (p22_r1 p22_r2 p22_r3) (control_covid control_cold control_unempl)
 global control "control_covid control_cold control_unempl"
-foreach i in $control{
+foreach i in control_cov{
 tab `i'
 }
 //INFORMED ABOUT:
@@ -173,10 +193,27 @@ sum consp_stats_high [weight=waga]
 
 //VOTING
 rename m20 voting
+
 replace voting=0 if voting==.a
 replace voting=8 if voting==5|voting==6
 global voting "i.voting"
 
+gen voting_nl=voting
+label define stupid 1 "1" 2 "2" 3 "3" 4 "4" 5 "5" 6 "6" 7 "7" 8 "8" 9 "9"
+label values voting_nl stupid
+
+tab voting voting_nl
+
+gen voting_short=voting
+replace voting_short=9 if voting==8 | voting==0
+replace voting_short=2 if voting==3 
+
+label define v_s 1 "Zjedn. Praw." 2 "KO, PL2050 SH" 4 "lewica" 7 "Konfederacja" 9 "inna lub żadna", replace
+label define v_s_eng 1 "PiS(ruling, right)" 2 "centre-right" 4 "left" 7 "ultra-right" 9 "none or other", replace
+
+label values voting_short v_s
+
+tab voting_sh
 
 //covid impact estimations
 rename (p24 p25) (subj_est_cases subj_est_death)
@@ -329,7 +366,8 @@ capture global explanations "..."//will be included into "contol" global
 
 //////////////////*************GLOBALS***************////////////
 global wealth "wealth_low wealth_high" //included into demogr
-global demogr "male age age2 i.city_population secondary_edu higher_edu $wealth health_poor health_good $health_details had_covid covid_hospitalized covid_friends religious i.religious_freq status_unemployed status_pension status_student" 
+global demogr "male age age2 i.city_population secondary_edu higher_edu $wealth health_poor health_good $health_details tested_pos thinks_had covid_hospitalized covid_friends religious i.religious_freq status_unemployed status_pension status_student" 
+global demogr_no_ma "i.city_population $wealth health_poor health_good $health_details tested_pos thinks_had covid_hospitalized covid_friends religious i.religious_freq status_unemployed status_pension status_student"
 global demogr_int "male age higher_edu"
 global emotions "e_happiness e_fear e_anger e_disgust e_sadness e_surprise"
 global risk "risk_overall risk_work risk_health"
@@ -339,6 +377,10 @@ global informed "informed_covid informed_cold informed_unempl"
 global conspiracy "conspiracy_general_info conspiracy_stats conspiracy_excuse" //we also have conspiracy_score
 global voting "i.voting"
 global health_advice "mask_wearing distancing"
+
+pwcorr no_manips $vaccine_vars male age second higher $wealth health*, sig
+tab no_manips voting, chi
+
 foreach i in $health_advice{
 tab `i'
 }
@@ -348,22 +390,78 @@ global order_effects ""
 // global vaccine_short "v_producer_reputation	v_efficiency	v_safety	v_scarcity	v_other_want_it	v_scientific_authority	v_ease_personal_restrictions"
 global prices "v_p_gets70	v_p_pays10	v_p_pays70"
 
+//////////**** simple logit yes/no
+logit vaxx_yes $vaccine_vars $demogr [pweight=waga], or
+est store l_1
+
+sum age 
+tab sex
+/*
+logit vaxx_yes sex##c.age edu_short##voting_short [pweight=waga]
+margins sex, at(age=(18(5)78))
+marginsplot, recast(line) recastci(rarea) xtitle("Wiek") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
+margins edu_short#voting_short
+marginsplot, recast(scatter) xtitle("wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
+*/
+
+logit vaxx_yes sex##age_category  edu_short##voting_short [pweight=waga]
+
+ologit v_decision sex##age_category  edu_short##voting_short [pweight=waga]
+margins age_category#sex
+marginsplot, ytitle("Prawdopodobieństwo gotowości szczepienia") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("Efekty krańcowe płci i wieku")
+
+
+quietly logit vaxx_yes $vaccine_vars $demogr $voting [pweight=waga], or
+est store l_2
+
+quietly logit vaxx_yes $vaccine_vars $demogr $voting $emotions $risk worry_covid $trust_dummies control_covid $informed conspiracy_score $covid_impact $health_advice [pweight=waga], or
+est store l_3
+test control_cov $informed conspiracy_score $covid_impact $health_advice
+
+logit vaxx_yes sex##c.age edu_short##voting_short $vaccine_vars $demogr_no_ma $emotions $risk worry_covid $trust_dummies control_covid $informed conspiracy_score $covid_impact $health_advice [pweight=waga], or
+est store l_4
+margins sex, at(age=(18(5)78))
+//PL: marginsplot, recast(line) recastci(rarea) xtitle("Wiek") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
+label values sex sex_eng
+marginsplot, recast(line) recastci(rarea) 
+graph save Graph "margins-sex_age_eng.gph"
+
+label values edu_short e_s_eng
+label values voting_short v_s_eng
+margins edu_short#voting_short
+//PL: marginsplot, recast(scatter) xtitle("wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
+
+marginsplot, recast(scatter) 
+graph save Graph "margins-edu_voting_eng.gph"
+
+est table l_1 l_2 l_2 l_3 l_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N) eform
+stop
+
 //////////****ORDERED LOGITS**********/////
-quietly ologit v_decision $vaccine_vars $demogr [pweight=waga]
+ologit v_decision $vaccine_vars $demogr [pweight=waga]
 est store m_1
 
-quietly ologit v_decision $vaccine_vars $demogr $voting [pweight=waga] 
-est store m_21
 
-quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry  $trust_dummies  [pweight=waga]
-est store m_22
-test $emotions $risk $worry $trust_dummies 
 
-quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice [pweight=waga]
-est store m_23
-test $control $informed conspiracy_score $covid_impact $health_advice
+quietly ologit v_decision $vaccine_vars $demogr $voting [pweight=waga], or
+margins
+est store m_2
 
-ologit v_decision no_manips $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice
+ologit v_decision $vaccine_vars $demogr $voting $emotions $risk worry_cov  $trust_dummies  [pweight=waga], or
+est store m_3
+test $emotions $risk worry_cov $trust_dummies 
+
+ologit v_decision $vaccine_vars $demogr $voting $emotions $risk worry_cov $trust_dummies control_covid $informed conspiracy_score $covid_impact $health_advice [pweight=waga], or
+est store m_4
+test control $informed conspiracy_score $covid_impact $health_advice
+
+est table l_1 l_2 l_2 l_3 l_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N) eform
+est table m_1 m_2 m_2 m_3 m_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
+
+stop
+
+
+// ologit v_decision no_manips $vaccine_vars $demogr $voting $emotions $risk worry_cov $trust_dummies control_c $informed conspiracy_score $covid_impact $health_advice
 
 
 // XXXXXXXXXXXXXXXXXXXXXXX add order effects
@@ -378,7 +476,7 @@ foreach manipulation in $vaccine_vars {
 }
 }
 dis "$interactions"
-quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice $interactions
+quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk worry_cov $trust_dummies control_cov $informed conspiracy_score $covid_impact $health_advice $interactions
 est store m_3
 test $interactions
 
@@ -393,7 +491,7 @@ foreach manipulation in $vaccine_short {
 }
 }
 dis "$int_manips"
-quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice $int_manips
+quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk worry_cov $trust_dummies control_cov $informed conspiracy_score $covid_impact $health_advice $int_manips
 est store m_4
 test $int_manips
 
@@ -406,14 +504,14 @@ foreach price in $prices {
 }
 }
 dis "$price_wealth"
-quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice $price_wealth
+quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk worry_cov $trust_dummies control_cov $informed conspiracy_score $covid_impact $health_advice $price_wealth
 est store m_5
 test $price_wealth
 
 //check for interactions: vaccine persuasive messages (producer from EU; vaccine safety + voting)
 //gen int_voting_prod=voting*v_producer_reputation
 //gen int_voting_safety=voting*v_safety
-xi: quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice  i.voting*v_producer_reputation i.voting*v_safety
+xi: quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk worry_cov $trust_dummies control_cov $informed conspiracy_score $covid_impact $health_advice  i.voting*v_producer_reputation i.voting*v_safety
 est store m_6
 test _IvotXv_pro_1 _IvotXv_pro_2 _IvotXv_pro_3 _IvotXv_pro_4 _IvotXv_pro_7 _IvotXv_pro_8 _IvotXv_pro_9 _IvotXv_saf_1 _IvotXv_saf_2 _IvotXv_saf_3 _IvotXv_saf_4 _IvotXv_saf_7 _IvotXv_saf_8 _IvotXv_saf_9
 
@@ -426,7 +524,7 @@ foreach manipulation in $vaccine_vars {
 	global int_consp_manip "$int_consp_manip `abb'_conspiracy" 	
 }
 dis "$int_consp_manip"
-quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice $int_consp_manip
+quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk worry_cov $trust_dummies control_cov $informed conspiracy_score $covid_impact $health_advice $int_consp_manip
 est store m_7
 test $int_consp_manip
 */
@@ -443,7 +541,7 @@ foreach manipulation in $vaccine_vars {
 }
 
 dis "$int_trust_manip"
-quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk $worry $trust_dummies $control $informed conspiracy_score $covid_impact $health_advice $int_trust_manip
+quietly ologit v_decision $vaccine_vars $demogr $voting $emotions $risk worry_cov $trust_dummies control_cov $informed conspiracy_score $covid_impact $health_advice $int_trust_manip
 est store m_8
 test $int_trust_manip
 
@@ -456,7 +554,7 @@ est table m_1 m_21 m_22 m_23, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
 //result:yes/no order effects detected 
 /////****END********************************/////////
 
-est table m_2 m_1 m_0, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
+// est table m_2 m_1 m_0, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
 
 ologit decision_change $demogr $voting $emotions
 
