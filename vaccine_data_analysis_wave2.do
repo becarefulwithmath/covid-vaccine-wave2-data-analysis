@@ -12,12 +12,122 @@ clear all
 set scheme burd
 //INTSALATION:
 //capture ssc install tabstatmat
+/*
+//creation of population and cases data
+clear all
+import excel "G:\Shared drives\Koronawirus\studies\covid cases data.xlsx", sheet("data format") cellrange(A1:B3107) firstrow clear
+save "G:\Shared drives\Koronawirus\studies\data format.dta", replace
+
+clear all
+import excel "G:\Shared drives\Koronawirus\studies\covid cases data.xlsx", sheet("population per region") cellrange(A8:E23)
+rename A region_id
+rename B region
+rename E population
+keep region_id region population
+save "G:\Shared drives\Koronawirus\studies\population per region.dta", replace
+
+clear all
+import excel "G:\Shared drives\Koronawirus\studies\covid cases data.xlsx", sheet("covid cases per region") cellrange(A2:J770) firstrow clear
+recast double data
+save "G:\Shared drives\Koronawirus\studies\covid cases per region.dta", replace
+
+clear all
+import excel "G:\Shared drives\Koronawirus\studies\covid cases data.xlsx", sheet("covid cases total") cellrange(A2:M51) firstrow clear
+recast double data
+save "G:\Shared drives\Koronawirus\studies\covid cases total.dta", replace
+
+capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
+capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
+capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda wave2)"
+use WNE2_N3000_stata_format.dta, clear
+
+//merge with covid cases per region, total, population per region
+rename woj region_id
+rename date data_from_Ariadna
+
+capture drop _merge
+merge 1:1 _n using "G:\Shared drives\Koronawirus\studies\data format.dta"
+capture drop _merge
+merge m:1 region_id using "G:\Shared drives\Koronawirus\studies\population per region.dta"
+capture drop _merge
+merge m:m data region_id using "G:\Shared drives\Koronawirus\studies\covid cases per region.dta"
+keep if _merge==3
+capture drop _merge
+merge m:1 data using "G:\Shared drives\Koronawirus\studies\covid cases total.dta"
+keep if _merge==3
+capture drop _merge
+//save file later
+
+
+//creation of why and who
+//why
+import excel "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\final_classification.xlsx", sheet("why") cellrange(A1:J6224) firstrow clear
+saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_why.dta", version(13) replace
+//who
+import excel "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\final_classification.xlsx", sheet("new who 20210412") cellrange(A1:K6224) firstrow clear
+saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_who.dta", version(13) replace
+*/
+
+//merge with why and who
+capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
+capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
+capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda wave2)"
+// capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka20210310 data analysis (Arianda wave2)"
+
+use WNE2_N3000_stata_format.dta, clear
+
+
+//merge with why
+capture drop _merge
+capture merge 1:1 ID using "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_why.dta"
+capture merge 1:1 ID using "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_why.dta"
+rename wave wave_why
+keep if _merge==3
+
+
+//merge with who
+capture drop _merge
+capture merge 1:1 ID using "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_who.dta"
+capture merge 1:1 ID using "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_who.dta"
+keep if _merge==3
+capture drop _merge
+
+//vars generation
+gen final_why=FINALWHY
+desc final_why
+replace final_why=auto_why if final_why==""
+
+ren final_who FINALWHO
+gen final_who=FINALWHO
+replace final_who=auto_who if final_who==""
+
+global why_vars "safety_concerns efficacy_concerns poorly_tested not_afraid_virus just_no vaccine_too_costly conspiracy contraindications antibodies time_consuming doubts_no mistrust_no antivax INCONSISTENT nonens other safety_general others_safety normality just_yes belief_science no_alternatives morbidity_factors convenience doubts_yes mistrust_yes work money_pays_dislike money_pays_ok money_gets money_free money_other already_vac obligation nonsens"
+
+global who_vars "who_dont_know who_nothing who_family_general who_family_health who_doctor who_else who_more_evidence_efficacy who_more_evidence_safety who_more_info who_money_free who_money_price who_forced who_time who_already_vac who_nonsens who_convenience who_choice who_more_evidence_inefficacy who_side_effects who_money who_unavailability"
+
+foreach i in $why_vars{
+gen why_`i' = strpos(final_why,"`i'")
+replace why_`i'=1 if why_`i'>0
+}
+
+sum why_*
+
+foreach i in $who_vars{
+gen who_`i' = strpos(final_who,"`i'")
+replace who_`i'=1 if who_`i'>0
+}
+
+
+
+
+
 
 //WORKING FOLDER AND DATA
 capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
 capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
 capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda wave2)"
-use WNE2_N3000_stata_format.dta, clear
+// use WNE2_N3000_stata_format.dta, clear
+
 
 //comments review, count, %
 gen n_count=_N
@@ -31,11 +141,17 @@ display "number of comments: "  `comment'_count
 display "% of records with comments: " `comment'_count_percent
 }
 
+
+sum why_*
+
 //VACCINE PART DATA CLEANING
 rename (p37_1_r1	p37_1_r2	p37_1_r3		p37_1_r5	p37_1_r6	p37_1_r7 p37_1_r8_r8	p37_8_r1	p37_8_r2	p37_8_r3	p37_8_r4	p37) (v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested	v_p_pay0	v_p_gets70	v_p_pays10	v_p_pays70	v_decision) 
 global vaccine_vars "v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested	v_p_gets70	v_p_pays10	v_p_pays70" // this refers to the previous wave: i leave out scarcity -- sth that supposedly everybody knows. we can't estimate all because of ariadna's error anyway
 global vaccine_short "v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested"
 global prices "v_p_gets70	v_p_pays10	v_p_pays70"
+
+
+sum why_*
 
 gen vaxx_cert_yes =v_dec==4
 gen vaxx_rather_yes =v_dec==3
@@ -76,6 +192,11 @@ ologit v_dec sum_vaxx if no_manips | v_p_pay0==1
 ologit v_dec no_manips $vaccine_vars if no_manips | v_p_pay0==1
 
 drop if no_manips
+
+
+//// 
+tabstat why_*, by(v_decision)
+
 
 //DEMOGRAPHICS DATA CLEANING
 //wojewodstwo is ommited, because of no theoretical reason to include it
