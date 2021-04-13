@@ -12,6 +12,7 @@ clear all
 set scheme burd
 //INTSALATION:
 //capture ssc install tabstatmat
+
 /*
 //creation of population and cases data
 clear all
@@ -56,9 +57,10 @@ capture drop _merge
 merge m:1 data using "G:\Shared drives\Koronawirus\studies\covid cases total.dta"
 keep if _merge==3
 capture drop _merge
-//save file later
+save "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats.dta", replace
+*/
 
-
+/*
 //creation of why and who
 //why
 import excel "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\final_classification.xlsx", sheet("why") cellrange(A1:J6224) firstrow clear
@@ -66,15 +68,13 @@ saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of op
 //who
 import excel "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\final_classification.xlsx", sheet("new who 20210412") cellrange(A1:K6224) firstrow clear
 saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_who.dta", version(13) replace
-*/
 
 //merge with why and who
 capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
 capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
 capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda wave2)"
-// capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka20210310 data analysis (Arianda wave2)"
 
-use WNE2_N3000_stata_format.dta, clear
+use WNE2_N3000_covid_stats.dta, clear
 
 
 //merge with why
@@ -91,8 +91,36 @@ capture merge 1:1 ID using "G:\Shared drives\Koronawirus\studies\3 szczepionka\c
 capture merge 1:1 ID using "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_who.dta"
 keep if _merge==3
 capture drop _merge
+save "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why.dta", replace
+*/
 
-//vars generation
+/* 
+//"refered to" creation
+import excel "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\all classifications stats.xlsx", sheet("refered to") firstrow clear
+destring ID, replace
+saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\refered_to.dta", version(13) replace
+
+//"refered to" merge
+capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
+capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
+capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda wave2)"
+
+use WNE2_N3000_covid_stats_who_why.dta, clear
+capture drop _merge
+merge 1:1 ID using "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\refered_to.dta"
+keep if _merge==3
+capture drop _merge
+save "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why_refto.dta", replace
+*/
+
+//WORKING FOLDER AND DATA
+capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
+capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
+capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda wave2)"
+
+use WNE2_N3000_covid_stats_who_why_refto.dta, clear
+
+//who why vars generation
 gen final_why=FINALWHY
 desc final_why
 replace final_why=auto_why if final_why==""
@@ -117,17 +145,16 @@ gen who_`i' = strpos(final_who,"`i'")
 replace who_`i'=1 if who_`i'>0
 }
 
+//"refered to" vars generation
 
+global refered_to "referred_to_the_price referred_to_the_efficacy"
 
+foreach i in $refered_to{
+gen ref_to_`i' = strpos(whowhy_refered_to,"`i'") //code look for text in the field "whowhy_refered_to", meaning combination of search in why and who fields
+replace ref_to_`i'=1 if ref_to_`i'>0
+}
 
-
-
-//WORKING FOLDER AND DATA
-capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
-capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
-capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda wave2)"
-// use WNE2_N3000_stata_format.dta, clear
-
+sum ref_to_*
 
 //comments review, count, %
 gen n_count=_N
