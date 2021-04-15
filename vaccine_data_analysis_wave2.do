@@ -3,13 +3,15 @@
 // robustness check: to drop out 5% of the fastest subjects
 // to remove participant with inconsistent justification of vax decision
 // to remove all other categories if there is a category "just_yes" OR just_no
-// ssc install scheme-burd, replace
+
 clear all
 // install package to import spss file
 // net from http://radyakin.org/transfer/usespss/beta
 //import spss using "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\archive\WNE2_N3000.sav", clear
 //saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_stata_format.dta", version(13)
-set scheme burd
+
+//ssc install scheme-burd, replace
+capture set scheme burd
 //INTSALATION:
 //capture ssc install tabstatmat
 
@@ -73,6 +75,7 @@ saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of op
 capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
 capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
 capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda wave2)"
+*/
 
 use WNE2_N3000_covid_stats.dta, clear
 
@@ -91,10 +94,11 @@ capture merge 1:1 ID using "G:\Shared drives\Koronawirus\studies\3 szczepionka\c
 capture merge 1:1 ID using "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_who.dta"
 keep if _merge==3
 capture drop _merge
-save "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why.dta", replace
-*/
+capture save "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why.dta", replace
+capture save "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why.dta", replace
 
-/* 
+
+/*
 //"refered to" creation
 import excel "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\all classifications stats.xlsx", sheet("refered to") firstrow clear
 destring ID, replace
@@ -120,12 +124,16 @@ capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka
 
 use WNE2_N3000_covid_stats_who_why_refto.dta, clear
 
+// generating voievodship-spec vars
+gen infected_y_pc=infected_y/population*1000
+gen deceased_y_pc=deceased_y/population*1000
+
 //who why vars generation
 gen final_why=FINALWHY
 desc final_why
 replace final_why=auto_why if final_why==""
 
-ren final_who FINALWHO
+ren final_who FINALWHO  //Asia:in excel it's called final_who and not FINALWHO
 gen final_who=FINALWHO
 replace final_who=auto_who if final_who==""
 
@@ -134,19 +142,20 @@ global why_vars "safety_concerns efficacy_concerns poorly_tested not_afraid_viru
 global who_vars "who_dont_know who_nothing who_family_general who_family_health who_doctor who_else who_more_evidence_efficacy who_more_evidence_safety who_more_info who_money_free who_money_price who_forced who_time who_already_vac who_nonsens who_convenience who_choice who_more_evidence_inefficacy who_side_effects who_money who_unavailability"
 
 foreach i in $why_vars{
-gen why_`i' = strpos(final_why,"`i'")
-replace why_`i'=1 if why_`i'>0
+gen `i' = strpos(final_why,"`i'")
+replace `i'=1 if `i'>0
 }
 
 sum why_*
 
 foreach i in $who_vars{
-gen who_`i' = strpos(final_who,"`i'")
-replace who_`i'=1 if who_`i'>0
+gen `i' = strpos(final_who,"`i'")
+replace `i'=1 if `i'>0
 }
 
 //"refered to" vars generation
 
+rename (who_refered_to why_refered_to) (refered_to_who refered_to_why)
 global refered_to "referred_to_the_price referred_to_the_efficacy"
 
 foreach i in $refered_to{
@@ -167,7 +176,6 @@ gen `comment'_count_percent = `comment'_count/n_count
 display "number of comments: "  `comment'_count
 display "% of records with comments: " `comment'_count_percent
 }
-
 
 sum why_*
 
@@ -223,6 +231,7 @@ drop if no_manips
 
 //// 
 tabstat why_*, by(v_decision)
+tabout why_*, by(v_decision)
 
 
 //DEMOGRAPHICS DATA CLEANING
@@ -410,9 +419,11 @@ tab `i'
 //trust
 rename (trust_r1	trust_r2	trust_r3	trust_r4	trust_r5	trust_r6	trust_r7) (trust_EU	trust_gov	trust_neigh	trust_doctors	trust_media	trust_family	trust_science)
 global trust "trust_EU	trust_gov	trust_neigh	trust_doctors	trust_media	trust_family	trust_science" //included into demogr
+
 foreach i in $trust{
 tab `i'
 }
+
 
 capture drop trust_*_Y trust_*_N
 
@@ -422,6 +433,8 @@ gen `var'_Y=`var'==1
 gen `var'_N=`var'==3
 global trust_dummies "$trust_dummies `var'_Y `var'_N"
 }
+
+global trust_short_dummies "trust_EU_N trust_gov_N trust_media_N trust_science_Y trust_science_N trust_doctors_Y trust_doctors_N"
 
 sum $trust_dummies
 
@@ -488,9 +501,6 @@ tab order_vaccine_persuasion //added into next global
 
 replace covid_hosp=0 if covid_hosp==.a
 
-
-global order_effects "$g_order_emotions $order_trust $g_order_risk $g_order_worry $g_order_control $g_order_informed $g_order_estimations $g_order_conspiracy order_vaccine_persuasion"
-
 //TIME
 // define variable that slows percentile, by time 
 rename survey_finish_time time
@@ -527,6 +537,7 @@ global conspiracy "conspiracy_general_info conspiracy_stats conspiracy_excuse" /
 global voting "i.voting"
 global voting_short "b2.voting_short" // makes the largest and centrist party (two of them really: PO+Hołownia) the base category 
 global health_advice "mask_wearing distancing"
+global order_effects "$g_order_emotions $order_trust $g_order_risk $g_order_worry $g_order_control $g_order_informed $g_order_estimations $g_order_conspiracy order_vaccine_persuasion"
 
 pwcorr no_manips $vaccine_vars male age second higher $wealth health*, sig
 tab no_manips voting, chi
@@ -535,7 +546,7 @@ foreach i in $health_advice{
 tab `i'
 }
 global covid_impact "subj_est_cases_ln subj_est_death_l"
-global order_effects ""
+//global order_effects ""
 // DEFINED (UND UPDATED TO NEW VERSION) BEFORE! global vaccine_vars "v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions	v_p_gets70	v_p_pays10	v_p_pays70" // i leave out scarcity -- sth that supposedly everybody knows. we can't estimate all because of ariadna's error anyway
 // global vaccine_short "v_prod_reputation	v_efficiency	v_safety	v_scarcity	v_other_want_it	v_scientific_authority	v_ease_personal_restrictions"
 global prices "v_p_gets70	v_p_pays10	v_p_pays70"
@@ -563,7 +574,23 @@ global basic_for_int "$vaccine_vars $demogr $voting_short $emotions $risk worry_
 logit vaxx_yes  $basic_for_int [pweight=waga], or
 est store l_2
 test control_cov $informed conspiracy_score $covid_impact $health_advice
+
+xi: logit vaxx_yes  $basic_for_int i.region infected_yesterday [pweight=waga], or
+test _Iregion_2/_Iregion_16
  
+xi: logit vaxx_yes  $basic_for_int i.region PL_infected_y [pweight=waga], or
+xi: logit vaxx_yes  $basic_for_int i.region deceased_y_pc [pweight=waga], or
+
+xi: logit vaxx_yes  $basic_for_int i.region infected_y_pc deceased_y_pc PL_infected_yesterday PL_deceased_yesterday [pweight=waga], or
+test _Iregion_2/_Iregion_16
+test infected_y_pc deceased_y_pc
+test PL_infected_yesterday PL_deceased_yesterday
+test _Iregion_2/_Iregion_16 infected_y_pc deceased_y_pc PL_infected_yesterday PL_deceased_yesterday
+
+//to add to every model?
+global cases_vars "i.region infected_y_pc deceased_y_pc PL_infected_yesterday PL_deceased_yesterday"
+
+stop
 
 logit vaxx_yes sex##c.age edu_short##b2.voting_short $vaccine_vars $demogr_no_ma  $emotions $risk worry_covid $trust_dummies control_covid $informed conspiracy_score  $covid_impact $health_advice [pweight=waga]
 est store l_3
@@ -602,9 +629,13 @@ est table l_1 l_2 l_2 l_3 l_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p)
 
 
 
+//some broken code, Michal?
 ssc install tuples
-tuples $vaccine_vars, asis conditionals(!(8&9) !(8&10) !(9&10)) min(2) max(2)
- 
+capture tuples $vaccine_vars, asis conditionals(!(8&9) !(8&10) !(9&10)) min(2) max(2)
+
+save "WNE2_N3000_after_tuples.dta, replace
+use "WNE2_N3000_after_tuples.dta, replace
+
  global int_manips ""
  forvalues i = 1/`ntuples' {
  display "`tuple`i''"
@@ -616,6 +647,7 @@ tuples $vaccine_vars, asis conditionals(!(8&9) !(8&10) !(9&10)) min(2) max(2)
 // local iterms "`iterms' i.`1'*i.`2'"
  }
 
+ 
 dis "$int_manips"
 logit vaxx_yes $basic_for_int  $int_manips [pweight=waga], or
 est store l_5
@@ -659,22 +691,23 @@ est store l_8
 test  _IvotXv_pro_2 _IvotXv_pro_3 _IvotXv_pro_4 _IvotXv_pro_7 _IvotXv_pro_8 _IvotXv_pro_9 _IvotXv_saf_2 _IvotXv_saf_3 _IvotXv_saf_4 _IvotXv_saf_7 _IvotXv_saf_8 _IvotXv_saf_9
 
 
-capture drop i_v*trust_*
-global int_trust_manip ""
+/*
+capture drop i_v*emo_*
+capture drop i_v*e_*
+global int_emo_manip ""
 foreach manipulation in $vaccine_vars {
-	foreach trust in $trust_dummies {
+	foreach emo in $emotions {
 	local abb=substr("`manipulation'",1,14)
-	gen i_`abb'_`trust'=`abb'*`trust'	
-	global int_trust_manip "$int_trust_manip i_`abb'_`trust'" 	
+	gen i_`abb'_`emo'=`abb'*`emo'	
+	global int_emo_manip "$int_emo_manip i_`abb'_`emo'" 	
 }
 }
 
-dis "$int_trust_manip"
-logit vaxx_yes $basic_for_int  $int_trust_manip [pweight=waga], or
-est store l_9
-test $int_trust_manip
-
-// XXXXXXXXXXXXXX maybe only gov, scientists?
+dis "$int_emo_manip"
+logit vaxx_yes $basic_for_int  $int_emo_manip [pweight=waga], or
+est store l_10
+test $int_emo_manip
+*/
 
 
 est table l_5 l_6 l_7 l_8 l_9, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
@@ -693,3 +726,16 @@ ologit decision_change $demogr $voting $emotions
 /////////**********************************************////////////////
 /////////**********************************************////////////////
 /////////**********************************************////////////////
+
+
+// manipulation checks from why questions
+prtest ref_to_referred_to_the_price, by(v_p_pay0) // ok
+prtest ref_to_referred_to_the_e, by(v_eff) // right direction, but not sig
+prtest why_conv, by(v_eas) // ok
+prtest why_norm, by(v_scient) // ok
+
+// not clear which way it should go :):
+prtest why_poor, by(v_tested) 
+prtest why_safety_con, by(v_safety)
+prtest why_safety_gen, by(v_safety)
+
