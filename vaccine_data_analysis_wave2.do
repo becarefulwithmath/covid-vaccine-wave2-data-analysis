@@ -8,164 +8,179 @@ clear all
 // install package to import spss file
 // net from http://radyakin.org/transfer/usespss/beta
 //import spss using "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\archive\WNE2_N3000.sav", clear
-//saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_stata_format.dta", version(13)
+//import spss using "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (
+// > Arianda wave2)/archive/WNE2_N3000.sav"
+
 
 //ssc install scheme-burd, replace
 capture set scheme burd
 //INTSALATION:
 //capture ssc install tabstatmat
 
+
+capture cd "G:\Shared drives\Koronawirus\studies"
+capture cd "G:\Dyski współdzielone\Koronawirus\studies"
+capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies"
+
+
+/// CREATION OF POPULATION AND CASES DATA
 /*
-//creation of population and cases data
 clear all
-import excel "G:\Shared drives\Koronawirus\studies\covid cases data.xlsx", sheet("data format") cellrange(A1:B3107) firstrow clear
-save "G:\Shared drives\Koronawirus\studies\data format.dta", replace
+import excel "covid cases data.xlsx", sheet("data format") cellrange(A1:B3107) firstrow clear
+save "data format.dta", replace
 
 clear all
-import excel "G:\Shared drives\Koronawirus\studies\covid cases data.xlsx", sheet("population per region") cellrange(A8:E23)
+import excel "covid cases data.xlsx", sheet("population per region") cellrange(A8:E23)
 rename A region_id
 rename B region
 rename E population
 keep region_id region population
-save "G:\Shared drives\Koronawirus\studies\population per region.dta", replace
+save "population per region.dta", replace
 
 clear all
-import excel "G:\Shared drives\Koronawirus\studies\covid cases data.xlsx", sheet("covid cases per region") cellrange(A2:J770) firstrow clear
+import excel "covid cases data.xlsx", sheet("covid cases per region") cellrange(A2:J770) firstrow clear
 recast double data
-save "G:\Shared drives\Koronawirus\studies\covid cases per region.dta", replace
+save "covid cases per region.dta", replace
 
 clear all
-import excel "G:\Shared drives\Koronawirus\studies\covid cases data.xlsx", sheet("covid cases total") cellrange(A2:M51) firstrow clear
+import excel "covid cases data.xlsx", sheet("covid cases total") cellrange(A2:M51) firstrow clear
 recast double data
-save "G:\Shared drives\Koronawirus\studies\covid cases total.dta", replace
+save "covid cases total.dta", replace
 
-capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
-capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
-capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda wave2)"
-use WNE2_N3000_stata_format.dta, clear
+use "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_stata_format.dta", clear
+//use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_stata_format.dta", clear
 
 //merge with covid cases per region, total, population per region
 rename woj region_id
 rename date data_from_Ariadna
 
 capture drop _merge
-merge 1:1 _n using "G:\Shared drives\Koronawirus\studies\data format.dta"
+merge 1:1 _n using "data format.dta"
 capture drop _merge
-merge m:1 region_id using "G:\Shared drives\Koronawirus\studies\population per region.dta"
+merge m:1 region_id using "population per region.dta"
 capture drop _merge
-merge m:m data region_id using "G:\Shared drives\Koronawirus\studies\covid cases per region.dta"
+merge m:m data region_id using "covid cases per region.dta"
 keep if _merge==3
 capture drop _merge
-merge m:1 data using "G:\Shared drives\Koronawirus\studies\covid cases total.dta"
+merge m:1 data using "covid cases total.dta"
 keep if _merge==3
 capture drop _merge
-save "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats.dta", replace
+save "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats.dta", replace
+//save "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_covid_stats.dta", replace
 */
 
+///CREATION OF WHY AND WHO
 /*
-//creation of why and who
-//why
-import excel "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\final_classification.xlsx", sheet("why") cellrange(A1:J6224) firstrow clear
-saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_why.dta", version(13) replace
-//who
-import excel "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\final_classification.xlsx", sheet("new who 20210412") cellrange(A1:K6224) firstrow clear
-saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_who.dta", version(13) replace
+/// WHY
+import excel "3 szczepionka\classification of open ended questions\final_classification.xlsx", sheet("why") cellrange(A1:J6224) firstrow clear
+//import excel "3 szczepionka/classification of open ended questions/final_classification.xlsx", sheet("why") cellrange(A1:J6224) firstrow clear
+rename FINALWHY final_why
+save "3 szczepionka\classification of open ended questions\data_why.dta", replace
+//save "3 szczepionka/classification of open ended questions/data_why.dta", replace
 
-//merge with why and who
-capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
-capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
-capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda wave2)"
-*/
+/// WHO
+import excel "3 szczepionka\classification of open ended questions\final_classification.xlsx", sheet("new who 20210412") cellrange(A1:K6224) firstrow clear
+save "3 szczepionka\classification of open ended questions\data_who.dta", replace
+//import excel "3 szczepionka/classification of open ended questions/final_classification.xlsx", sheet("new who 20210412") cellrange(A1:K6224) firstrow clear
+//save "3 szczepionka/classification of open ended questions/data_who.dta", replace
 
-use WNE2_N3000_covid_stats.dta, clear
+/// merge with why and who
+use "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats.dta", clear
+//use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_covid_stats.dta", clear
 
-
-//merge with why
+/// merge with why
 capture drop _merge
-capture merge 1:1 ID using "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_why.dta"
-capture merge 1:1 ID using "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_why.dta"
+merge 1:1 ID using "3 szczepionka\classification of open ended questions\data_why.dta"
+//merge 1:1 ID using "3 szczepionka/classification of open ended questions/data_why.dta"
 rename wave wave_why
 keep if _merge==3
 
-
-//merge with who
+/// merge with who
 capture drop _merge
-capture merge 1:1 ID using "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_who.dta"
-capture merge 1:1 ID using "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\classification of open ended questions\data_who.dta"
+capture merge 1:1 ID using "3 szczepionka\classification of open ended questions\data_who.dta"
+//capture merge 1:1 ID using "3 szczepionka/classification of open ended questions/data_who.dta"
 keep if _merge==3
-capture drop _merge
-capture save "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why.dta", replace
-capture save "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why.dta", replace
-
-
-/*
-//"refered to" creation
-import excel "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\all classifications stats.xlsx", sheet("refered to") firstrow clear
-destring ID, replace
-saveold "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\refered_to.dta", version(13) replace
-
-//"refered to" merge
-capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
-capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
-capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda wave2)"
-
-use WNE2_N3000_covid_stats_who_why.dta, clear
-capture drop _merge
-merge 1:1 ID using "G:\Shared drives\Koronawirus\studies\3 szczepionka\classification of open ended questions\refered_to.dta"
-keep if _merge==3
-capture drop _merge
-save "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why_refto.dta", replace
+ drop _merge
+ 
+save "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why.dta", replace
+//save "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_covid_stats_who_why.dta", replace
 */
 
-//WORKING FOLDER AND DATA
-capture cd "G:\Shared drives\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
-capture cd "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave2)"
-capture cd "/Volumes/GoogleDrive/Shared drives/Koronawirus/studies/3 szczepionka/20210310 data analysis (Arianda wave2)"
+/// "REFERRED TO" CREATION
+/*
+import excel "3 szczepionka\classification of open ended questions\final_classification.xlsx", sheet("(old 20210416) referred to") firstrow clear
+//import excel "3 szczepionka/classification of open ended questions/final_classification.xlsx", sheet("(old 20210416) referred to") firstrow clear
+destring ID, replace
+save "3 szczepionka\classification of open ended questions\referred_to.dta", replace
+//save "3 szczepionka/classification of open ended questions\referred_to.dta", replace
 
-use WNE2_N3000_covid_stats_who_why_refto.dta, clear
+/// "referred to" merge
+use "3 szczepionka/20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why.dta", clear
+//use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_covid_stats_who_why.dta", clear
+capture drop _merge
+merge 1:1 ID using "3 szczepionka\classification of open ended questions\referred_to.dta"
+//merge 1:1 ID using "3 szczepionka/classification of open ended questions/referred_to.dta"
+keep if _merge==3
+drop _merge
 
-// generating voievodship-spec vars
+save "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why_refto.dta", replace
+//save "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_covid_stats_who_why_refto.dta", replace
+*/
+
+/// WORKING FOLDER AND DATA
+use "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why_refto.dta", clear
+use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_covid_stats_who_why_refto.dta", clear
+
+/// GENERATING VOIEVODSHIP-SPEC VARS
 gen infected_y_pc=infected_y/population*1000
 gen deceased_y_pc=deceased_y/population*1000
 
-//who why vars generation
-gen final_why=FINALWHY
+/// WHO WHY VARS GENERATION
 desc final_why
 replace final_why=auto_why if final_why==""
 
-ren final_who FINALWHO  //Asia:in excel it's called final_who and not FINALWHO
+rename final_who FINALWHO
 gen final_who=FINALWHO
 replace final_who=auto_who if final_who==""
 
-global why_vars "safety_concerns efficacy_concerns poorly_tested not_afraid_virus just_no vaccine_too_costly conspiracy contraindications antibodies time_consuming doubts_no mistrust_no antivax INCONSISTENT nonens other safety_general others_safety normality just_yes belief_science no_alternatives morbidity_factors convenience doubts_yes mistrust_yes work money_pays_dislike money_pays_ok money_gets money_free money_other already_vac obligation nonsens"
+replace final_why =subinword(final_why,"other","OTHER",.)
+global why_vars "safety_concerns efficacy_concerns poorly_tested not_afraid_virus just_no vaccine_too_costly conspiracy contraindications antibodies time_consuming doubts_no mistrust_no antivax safety_general others_safety normality just_yes belief_science no_alternatives morbidity_factors convenience doubts_yes mistrust_yes work money_pays_dislike money_pays_ok money_gets money_free money_other already_vac obligation INCONSISTENT OTHER nonsens"
 
-global who_vars "who_dont_know who_nothing who_family_general who_family_health who_doctor who_else who_more_evidence_efficacy who_more_evidence_safety who_more_info who_money_free who_money_price who_forced who_time who_already_vac who_nonsens who_convenience who_choice who_more_evidence_inefficacy who_side_effects who_money who_unavailability"
+global who_vars "who_dont_know who_nothing who_family_general who_family_health who_doctor who_else who_more_info who_forced who_nonsens who_convenience who_choice who_money who_other who_own_health who_more_evidence_efficacy who_more_evidence_safety who_money_free who_money_price who_time who_already_vac who_more_evidence_inefficacy who_side_effects who_unavailability who_end_pandemics INCONSISTENT"
 
 foreach i in $why_vars{
-gen `i' = strpos(final_why,"`i'")
-replace `i'=1 if `i'>0
+gen why_`i' = strpos(final_why,"`i'")
+replace why_`i'=1 if why_`i'>0
 }
 
 sum why_*
+ 
 
 foreach i in $who_vars{
 gen `i' = strpos(final_who,"`i'")
 replace `i'=1 if `i'>0
 }
 
-//"refered to" vars generation
+rename INCONSISTENT who_INCONSISTENT
+sum who_*
 
-rename (who_refered_to why_refered_to) (refered_to_who refered_to_why)
-global refered_to "referred_to_the_price referred_to_the_efficacy"
 
-foreach i in $refered_to{
-gen ref_to_`i' = strpos(whowhy_refered_to,"`i'") //code look for text in the field "whowhy_refered_to", meaning combination of search in why and who fields
+
+/// "REFERRED TO" VARS GENERATION
+
+rename (who_refered_to why_referred_to) (referred_to_who referred_to_why)
+global referred_to "referred_to_the_price referred_to_the_efficacy"
+gen whowhy_referred_to=referred_to_who+referred_to_why
+
+foreach i in $referred_to{
+gen ref_to_`i' = strpos(whowhy_referred_to,"`i'") //code look for text in the field "whowhy_referred_to", meaning combination of search in why and who fields
 replace ref_to_`i'=1 if ref_to_`i'>0
 }
 
 sum ref_to_*
 
-//comments review, count, %
+
+/// COMMENTS REVIEW, COUNT, %
 gen n_count=_N
 rename p29 comment_29
 global comments "comment_29"
@@ -177,16 +192,41 @@ display "number of comments: "  `comment'_count
 display "% of records with comments: " `comment'_count_percent
 }
 
-sum why_*
 
-//VACCINE PART DATA CLEANING
+/// VACCINE PART DATA CLEANING
 rename (p37_1_r1	p37_1_r2	p37_1_r3		p37_1_r5	p37_1_r6	p37_1_r7 p37_1_r8_r8	p37_8_r1	p37_8_r2	p37_8_r3	p37_8_r4	p37) (v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested	v_p_pay0	v_p_gets70	v_p_pays10	v_p_pays70	v_decision) 
 global vaccine_vars "v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested	v_p_gets70	v_p_pays10	v_p_pays70" // this refers to the previous wave: i leave out scarcity -- sth that supposedly everybody knows. we can't estimate all because of ariadna's error anyway
 global vaccine_short "v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested"
 global prices "v_p_gets70	v_p_pays10	v_p_pays70"
 
+label define v_dec_eng 1 "certainly not" 2 "rather not" 3 "rather yes" 4 "certainly yes"
+label values v_decision v_dec_eng
 
-sum why_*
+sort v_decision
+// browse p38 v_dec ID if why_INCO
+
+
+/// DROPPING (STRONG) INCONSISTENCIES
+/*my thinking was this:
+if someone says "zdecydowanie nie"(="definitely not") but says sth clearly positive about vaccines or vice versa, drop it
+if someone says "raczej nie"("rather not") and says (p38) he will get a jab (so a stronger statement, not just anything positive), drop it. 
+same for "raczej tak"(="rather yes") & explicit refusal in p38
+*/
+replace why_INCO=0 if v_decision==2|v_decision==3
+replace why_INCO=1 if ID==6552  // p38=="Chce się zaszczepić bo jest to rozwiązanie przyszłości"
+replace why_INCO=1 if ID==5758 // p38=="nie bede się szczepic eksperymentem medycznym,ktory ma testowc udzi przez 2 lata"
+replace why_INCO=0 if ID==4452 // p38=="chcę  by to wszystk się już zakończyło"
+
+// browse p39 v_dec ID if who_INCO
+
+replace who_INCO=0 if v_dec==2| v_dec==3
+replace who_INCO=1 if ID==4877 // p39=="Za tak. Szczepionka musiała by być długo testowana bo nie chcę brać udziału w eksperymentach medycznych" | p39=="nie zmienię zdania bo nie bede królikiem doświadczalnym w ich ekserymencie medycznym" | p39=="Nie ma możliwości stworzyć szybko szczepionki, bo potrzebny jest długi czas testowania, a tu nie mamy czasu, a skutki uboczne mogą się ujawnić po kilku latach."
+
+gen INCO=who_INCO+why_INCO
+drop if INCO
+
+
+
 
 gen vaxx_cert_yes =v_dec==4
 gen vaxx_rather_yes =v_dec==3
@@ -229,12 +269,13 @@ ologit v_dec no_manips $vaccine_vars if no_manips | v_p_pay0==1
 drop if no_manips
 
 
-//// 
+/// WHY AND WHO by decision
 tabstat why_*, by(v_decision)
-tabout why_*, by(v_decision)
+tabstat who_*, by(v_decision)
+tab v_decision
 
 
-//DEMOGRAPHICS DATA CLEANING
+///DEMOGRAPHICS DATA CLEANING
 //wojewodstwo is ommited, because of no theoretical reason to include it
 gen male=sex==2
 rename (age) (age_category)
@@ -251,7 +292,9 @@ gen higher_edu=edu==5|edu==6|edu==7
 
 capture drop edu_short
 gen edu_short=1*ele+2*sec+3*higher
-
+ 
+label define city_pop_eng 1 "village" 2 "small (<20k)" 3"medium (<99k)" 4 "big (<500k)" 5 "large city (>500k)"
+label values city_population city_pop_eng
 
 label define e_s 1 "podstawowe" 2 "średnie" 3 "wyższe", replace
 label values edu_short e_s
@@ -264,7 +307,7 @@ gen wealth_low=income==1|income==2
 gen wealth_high=income==4|income==5
 global wealth "wealth_low wealth_high"
 
-//HEALTH
+/// HEALTH
 rename m9 health_state
 
 gen health_poor=health_state==1|health_state==2
@@ -290,54 +333,57 @@ gen covid_friends_hospital=p34==1
 rename p34 covid_friends_hospital_initial
 gen covid_friends_nohospital=covid_friends==1&covid_friends_hospital==0
 
-//RELIGION
+/// RELIGION
 gen religious=m10==2|m10==3
 rename m10 religious_initial
 
 rename m11 religious_freq
 gen religious_often=religious_freq==4|religious_freq==5|religious_freq==6 //often = more than once a month
 
-//Employment
+label define reli_freq_eng 1 "never" 2 "less than once a year" 3 "few times a year" 4 "few times a month" 5 "few times a week" 6 "few times a day"
+label values religious_freq reli_freq_eng
+
+/// Employment
 gen status_unemployed=m12==5
 gen status_pension=m12==6
 gen status_student=m12==7
 rename m12 empl_status
 
-//COVID attitudes
+/// COVID attitudes
 rename p26 mask_wearing
 rename p30_r1 distancing
 
-//EMOTIONS
+/// EMOTIONS
 ren (p17_r1 p17_r2 p17_r3 p17_r4 p17_r5 p17_r6) (e_happiness e_fear e_anger e_disgust e_sadness e_surprise)
 global emotions "e_happiness e_fear e_anger e_disgust e_sadness e_surprise"
 foreach i in $emotions{
 tab `i'
 }
-//RISK ATTITUDES
+/// RISK ATTITUDES
 ren (p18_r1 p19_r1 p19_r2) (risk_overall risk_work risk_health)
 global risk "risk_overall risk_work risk_health"
 foreach i in $risk{
 tab `i'
 }
-//WORRY
+/// WORRY
 ren (p20_r1 p20_r2 p20_r3) (worry_covid worry_cold worry_unempl)
 global worry "worry_covid worry_cold worry_unempl"
 foreach i in worry_cov{
 tab `i'
 }
-//SUBJECTIVE CONTROL
+/// SUBJECTIVE CONTROL
 rename (p22_r1 p22_r2 p22_r3) (control_covid control_cold control_unempl)
 global control "control_covid control_cold control_unempl"
 foreach i in control_cov{
 tab `i'
 }
-//INFORMED ABOUT:
+/// INFORMED ABOUT:
 rename (p23_r1 p23_r2 p23_r3) (informed_covid informed_cold informed_unempl)
 global informed "informed_covid informed_cold informed_unempl"
 foreach i in $informed{
 tab `i'
 }
-//CONSPIRACY
+/// CONSPIRACY
 rename (p30cd_r1 p30cd_r2 p30cd_r3) (conspiracy_general_info conspiracy_stats conspiracy_excuse)
 global conspiracy "conspiracy_general_info conspiracy_stats conspiracy_excuse"
 foreach i in $conspiracy{
@@ -349,7 +395,7 @@ gen consp_stats_high=conspiracy_sta==6|conspiracy_st==7
 sum consp_stats_high [weight=waga]
 //lets do general conspiracy score?
 
-//VOTING
+/// VOTING
 rename m20 voting
 
 replace voting=0 if voting==.a
@@ -366,14 +412,23 @@ gen voting_short=voting
 replace voting_short=9 if voting==8 | voting==0
 replace voting_short=2 if voting==3 
 
-label define v_s 1 "Zjedn. Praw." 2 "KO, PL2050 SH" 4 "Lewica" 7 "Konfederacja" 9 "inna lub żadna", replace
-label define v_s_eng 1 "PiS(ruling, right)" 2 "centre" 4 "left" 7 "ultra-right" 9 "none or other", replace
+// OLD, OBSOLETE:
+// label define v_s_OLD 1 "Zjedn. Praw." 2 "KO, PL2050 SH" 4 "Lewica" 7 "Konfederacja" 9 "inna lub żadna", replace
+label define v_s_eng_OLD 1 "PiS(ruling, right)" 2 "centre" 4 "left" 7 "ultra-right" 9 "none or other", replace
+label values voting_short v_s_eng_OLD
+tab voting_short
 
-label values voting_short v_s
+recode voting_short (1=3) (2=2) (4=1) (7=4) (9=5)
+
+// NEW, TO HAVE LEFT ON THE LEFT ETC.
+label define v_s_eng 3 "PiS(ruling, right)" 2 "centre" 1 "left" 4 "ultra-right" 5 "none or other", replace
+label values voting_short v_s_eng
 
 tab voting_sh
 
-//covid impact estimations
+
+
+/// COVID IMPACT ESTIMATIONS
 rename (p24 p25) (subj_est_cases subj_est_death)
 destring subj_est_cases subj_est_death, replace
 replace subj_est_cases=. if subj_est_death>subj_est_cases*100
@@ -385,7 +440,7 @@ replace subj_est_death_l=0 if subj_est_death_l==.
 global covid_impact "subj_est_cases_ln subj_est_death_l"
 
 
-//[P40] Gdyby po pierwszych miesiącach szczepień potwierdziło się, że szczepionka jest skuteczna i bezpieczna, to byłbyś skłonny się zaszczepić? Zaznacz.
+//[P40] If the vaccine was confirmed to be effective and safe after the first few months of vaccinations, would you be willing to be vaccinated?
 rename p40 decision_change
 tab decision_change
 //this variable will be included into analysis to see which factors (e.g. emotions) are assotiated with vaccination decision change
@@ -395,7 +450,7 @@ replace change_yes=. if decision_change==.a
 sum change_yes [weight=waga]
 sum change_yes 
 
-//health status details:
+/// HEALTH STATUS DETAILS
 rename m9_1 health_vaccine_side_effects
 gen vaccine_extra_risky=health_vaccine_side_effects==1
 rename m9_2 health_covid_serious
@@ -416,14 +471,13 @@ foreach i in $health_details{
 tab `i'
 }
 
-//trust
+/// TRUST
 rename (trust_r1	trust_r2	trust_r3	trust_r4	trust_r5	trust_r6	trust_r7) (trust_EU	trust_gov	trust_neigh	trust_doctors	trust_media	trust_family	trust_science)
 global trust "trust_EU	trust_gov	trust_neigh	trust_doctors	trust_media	trust_family	trust_science" //included into demogr
 
 foreach i in $trust{
 tab `i'
 }
-
 
 capture drop trust_*_Y trust_*_N
 
@@ -438,9 +492,10 @@ global trust_short_dummies "trust_EU_N trust_gov_N trust_media_N trust_science_Y
 
 sum $trust_dummies
 
-//order
+
+/// ORDER
 // robustness check: to add order effects for emotions
-//[P17] Jak silnie odczuwasz w tej chwili (obecnie) poniższe emocje?
+//[P17] How strongly are you experiencing the following emotion at the moment?
 rename p17_order order_emotions
 replace order_emotions=subinstr(order_emotions,"r","",.)
 split order_emotions, p(",")
@@ -501,7 +556,7 @@ tab order_vaccine_persuasion //added into next global
 
 replace covid_hosp=0 if covid_hosp==.a
 
-//TIME
+/// TIME
 // define variable that slows percentile, by time 
 rename survey_finish_time time
 sort time
@@ -510,10 +565,10 @@ gen time_perc = _n/_N
 rename (p19_time p20_time p22_time p23_time p24_time p25_time p30cd_time p37_time) (time_risk time_worry time_control time_informed time_estimationscases time_estimationsdeath time_conspiracy time_v_persuasion)
 //do drop too quick subjects later
 
-//open ended question:
-// [P38] Opisz poniżej główne powody swojej decyzji odnośnie zaszczepienia się na koronawirusa. 
-// [P39] Kto lub co mogłoby zmienić Twoją decyzję odnośnie zaszczepienia się na koronawirusa? Opisz poniżej.
-// [optional] [P21] Jakie czynniki mają główny wpływ na to, w jakiej mierze jesteś zaniepokojony/a pandemią koronawirusa? 
+/// OPEN ENDED QUESTION
+// [P38] Describe below the main reasons for your decision regarding coronavirus vaccination. 
+// [P39] Who or what could change your decision regarding coronavirus vaccination?
+// [optional] [P21] What factors are major influences on the extent to which you are concerned about a coronavirus pandemic? 
 //will be classified and set of explanations will be produced.
 capture export excel respondent_id v_decision open_ended_v_reasoning P380 open_ended_v_influencer P390 using "C:\Users\johns_000\Desktop\openendedquestionsforclassification.xls", firstrow(variables) replace
 //every explanation will be assosiated with a dummy variable
@@ -569,10 +624,10 @@ marginsplot, recast(scatter) xtitle("wykształcenie") ytitle("szansa, że ktoś 
 logit vaxx_yes $vaccine_vars $demogr [pweight=waga], or
 est store l_1
 
+// this global will later be changed!
 global basic_for_int "$vaccine_vars $demogr $voting_short $emotions $risk worry_covid $trust_dummies control_covid $informed conspiracy_score $covid_impact $health_advice"
 
 logit vaxx_yes  $basic_for_int [pweight=waga], or
-est store l_2
 test control_cov $informed conspiracy_score $covid_impact $health_advice
 
 xi: logit vaxx_yes  $basic_for_int i.region infected_yesterday [pweight=waga], or
@@ -589,26 +644,30 @@ test _Iregion_2/_Iregion_16 infected_y_pc deceased_y_pc PL_infected_yesterday PL
 
 //to add to every model?
 global cases_vars "i.region infected_y_pc deceased_y_pc PL_infected_yesterday PL_deceased_yesterday"
+global basic_for_int "$basic_for_int $cases_vars"
+xi: logit vaxx_yes  $basic_for_int [pweight=waga], or
+test control_cov $informed conspiracy_score $covid_impact $health_advice _Iregion_2/_Iregion_16 infected_y_pc decea PL_infect PL_dec
+est store l_2
 
-stop
-
-logit vaxx_yes sex##c.age edu_short##b2.voting_short $vaccine_vars $demogr_no_ma  $emotions $risk worry_covid $trust_dummies control_covid $informed conspiracy_score  $covid_impact $health_advice [pweight=waga]
+xi: logit vaxx_yes sex##c.age edu_short##b2.voting_short $cases_vars $vaccine_vars $demogr_no_ma  $emotions $risk worry_covid $trust_dummies control_covid $informed conspiracy_score  $covid_impact $health_advice [pweight=waga]
 est store l_3
 label values sex sex_eng
 
 margins sex, at(age=(18(5)78))
 
-marginsplot, recast(line) recastci(rarea) // xtitle("Wiek") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
+marginsplot, recast(line) ciopt(color(%50)) recastci(rarea) // xtitle("Wiek") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
 // marginsplot, recast(line) recastci(rarea) 
 graph save Graph "margins-sex_age_eng.gph", replace
 
 label values edu_short e_s_eng
 label values voting_short v_s_eng
+ssc describe mplotoffset
 margins edu_short#voting_short
 //PL: marginsplot, recast(scatter) xtitle("wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
-marginsplot, recast(scatter) 
+marginsplot, recast(scatter) name(gr1,replace)
+margins edu_short#voting_short
+capture mplotoffset, recast(scatter)  offset(.1)
 graph save Graph "margins-edu_voting_eng.gph", replace
-
 
 
 
@@ -621,20 +680,25 @@ foreach manipulation in $vaccine_vars {
 }
 }
 dis "$interactions"
-quietly logit vaxx_yes $basic_for_int  $interactions [pweight=waga], or 
+quietly xi:logit vaxx_yes $basic_for_int  $interactions [pweight=waga], or 
 est store l_4
 test $interactions
 
 est table l_1 l_2 l_2 l_3 l_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
 
 
-
-//some broken code, Michal?
 ssc install tuples
-capture tuples $vaccine_vars, asis conditionals(!(8&9) !(8&10) !(9&10)) min(2) max(2)
 
-save "WNE2_N3000_after_tuples.dta, replace
-use "WNE2_N3000_after_tuples.dta, replace
+capture tuples $vaccine_vars, asis conditionals(!(8&9) !(8&10) !(9&10)) min(2) max(2)
+global Raman="YES"
+capture global Raman="`tuple1'"
+if "$Raman"!="YES"{
+save "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_after_tuples.dta", replace
+//save "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_after_tuples.dta", replace
+}
+use "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_after_tuples.dta"
+//use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_after_tuples.dta"
+
 
  global int_manips ""
  forvalues i = 1/`ntuples' {
@@ -647,9 +711,9 @@ use "WNE2_N3000_after_tuples.dta, replace
 // local iterms "`iterms' i.`1'*i.`2'"
  }
 
- 
+
 dis "$int_manips"
-logit vaxx_yes $basic_for_int  $int_manips [pweight=waga], or
+xi: logit vaxx_yes $basic_for_int  $int_manips [pweight=waga], or
 est store l_5
 test $int_manips
 
@@ -662,7 +726,7 @@ foreach price in $prices {
 }
 }
 dis "$price_wealth"
-logit vaxx_yes $basic_for_int  $price_wealth [pweight=waga], or
+xi: logit vaxx_yes $basic_for_int  $price_wealth [pweight=waga], or
 est store l_6
 test $price_wealth
 
@@ -675,11 +739,13 @@ foreach manipulation in $vaccine_vars {
 	global int_consp_manip "$int_consp_manip `abb'_conspiracy" 	
 }
 dis "$int_consp_manip"
-logit vaxx_yes $basic_for_int  $int_consp_manip [pweight=waga], or
+xi: logit vaxx_yes $basic_for_int  $int_consp_manip [pweight=waga], or
 est store l_7
 test $int_consp_manip
 
 drop v_*_conspiracy
+
+
 
 
 
@@ -710,7 +776,9 @@ test $int_emo_manip
 */
 
 
-est table l_5 l_6 l_7 l_8 l_9, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
+est table l_5 l_6 l_7 l_8, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
+
+
 // m_3 m_4 m_5 m_6 m_7, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
 //result:yes/no interactions detected
 //result:yes/no order effects detected 
@@ -720,7 +788,65 @@ est table l_5 l_6 l_7 l_8 l_9, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p)
 
 // XXXXXXXXXXXXXXXXXXX ologit specs analogous to logit here pls once we finally decide on logit!
 
-ologit decision_change $demogr $voting $emotions
+//////////**** now ologit
+ologit v_decision $vaccine_vars $demogr [pweight=waga], or
+est store o_1
+
+xi: ologit v_decision  $basic_for_int [pweight=waga], or
+est store o_2
+test control_cov $informed conspiracy_score $covid_impact $health_advice
+test _Iregion_2/_Iregion_16
+test infected_y_pc deceased_y_pc
+test PL_infected_yesterday PL_deceased_yesterday
+test _Iregion_2/_Iregion_16 infected_y_pc deceased_y_pc PL_infected_yesterday PL_deceased_yesterday
+
+
+xi: ologit v_decision sex##c.age edu_short##b2.voting_short $cases_vars $vaccine_vars $demogr_no_ma  $emotions $risk worry_covid $trust_dummies control_covid $informed conspiracy_score  $covid_impact $health_advice [pweight=waga]
+est store o_3
+label values sex sex_eng
+
+quietly xi: ologit v_decision $basic_for_int  $interactions [pweight=waga], or 
+est store o_4
+test $interactions
+
+est table o_1 o_2 o_2 o_3 o_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
+
+xi: ologit v_decision $basic_for_int  $int_manips [pweight=waga], or
+est store o_5
+test $int_manips
+
+xi: ologit v_decision $basic_for_int  $price_wealth [pweight=waga], or
+est store o_6
+test $price_wealth
+
+
+//check for interactions: vaccine persuasive messages set 1 + conspiracy score
+global int_consp_manip ""
+foreach manipulation in $vaccine_vars {
+	local abb=substr("`manipulation'",1,14)
+	gen `abb'_conspiracy=`abb'*conspiracy_score	
+	global int_consp_manip "$int_consp_manip `abb'_conspiracy" 	
+}
+dis "$int_consp_manip"
+xi: ologit v_decision $basic_for_int  $int_consp_manip [pweight=waga], or
+est store o_7
+test $int_consp_manip
+
+drop v_*_conspiracy
+
+
+
+//check for interactions: vaccine persuasive messages (prod from EU; vaccine safety + voting)
+//gen int_voting_prod=voting*v_prod_reputation
+//gen int_voting_safety=voting*v_safety
+xi: quietly ologit v_decision $basic_for_int i.voting*v_prod_reputation i.voting*v_safety [pweight=waga]
+est store o_8
+test  _IvotXv_pro_2 _IvotXv_pro_3 _IvotXv_pro_4 _IvotXv_pro_7 _IvotXv_pro_8 _IvotXv_pro_9 _IvotXv_saf_2 _IvotXv_saf_3 _IvotXv_saf_4 _IvotXv_saf_7 _IvotXv_saf_8 _IvotXv_saf_9
+
+est table o_5 o_6 o_7 o_8, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
+
+
+xi: ologit decision_change v_decision $basic_for_int [pweight=waga], or
 
 // FIGURES ??
 /////////**********************************************////////////////
@@ -730,12 +856,16 @@ ologit decision_change $demogr $voting $emotions
 
 // manipulation checks from why questions
 prtest ref_to_referred_to_the_price, by(v_p_pay0) // ok
-prtest ref_to_referred_to_the_e, by(v_eff) // right direction, but not sig
-prtest why_conv, by(v_eas) // ok
-prtest why_norm, by(v_scient) // ok
+prtest why_vaccine_too, by(v_p_pays70) // ok
+
+prtest ref_to_referred_to_the_e if vaxx_yes, by(v_efficiency) // right direction, but not sig
+prtest why_conv if vaxx_yes, by(v_ease_personal_restrictions) // ok
+prtest why_conv, by(v_ease_personal_restrictions) // ok
+
+prtest why_norm if vaxx_yes, by(v_scientific_authority) // ok
 
 // not clear which way it should go :):
+prtest why_poor if vaxx_yes==0, by(v_tested) 
 prtest why_poor, by(v_tested) 
-prtest why_safety_con, by(v_safety)
-prtest why_safety_gen, by(v_safety)
+prtest why_safety_gen if vaxx_yes, by(v_safety)
 
