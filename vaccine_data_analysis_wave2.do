@@ -249,7 +249,7 @@ sum vaxx_yes [weight=waga]
 pwcorr $vaccine_vars, sig
 egen sum_vaxx=rsum($vaccine_short)
 sum $vaccine_vars
-hist sum_vaxx, disc
+//hist sum_vaxx, disc
 tab sum_vaxx // seems ok
 
 capture drop no_manips
@@ -324,6 +324,7 @@ gen thinks_had_covid=had_covid==2
 rename p32 covid_hospitalized
 tab covid_hospitalized
 replace covid_hospitalized=0 if covid_hospitalized==.
+replace covid_hosp=0 if covid_hosp==.a
 
 gen covid_friends=p33==1
 rename p33 covid_friends_initial
@@ -493,7 +494,8 @@ global trust_short_dummies "trust_EU_N trust_gov_N trust_media_N trust_science_Y
 sum $trust_dummies
 
 
-/// ORDER
+/// ORDER EFFECTS
+/*
 // robustness check: to add order effects for emotions
 //[P17] How strongly are you experiencing the following emotion at the moment?
 rename p17_order order_emotions
@@ -545,22 +547,79 @@ replace order_conspiracy=subinstr(order_conspiracy,"r","",.)
 split order_conspiracy, p(",")
 global g_order_conspiracy "order_conspiracy1 order_conspiracy2 order_conspiracy3"
 destring $g_order_conspiracy, replace
+*/
 // robustness check: to add order effects for vaccine persuasive messages
 rename p37_order order_vaccine_persuasion
 replace order_vaccine_persuasion=subinstr(order_vaccine_persuasion,"r","",.)
 replace order_vaccine_persuasion=subinstr(order_vaccine_persuasion,",","",.)
-destring order_vaccine_persuasion, replace //RK:do we need destring? only 3 records have missing values = no message except price was shown
+/*
+destring order_vaccine_persuasion, replace //RK:do we need destring? only 28 records have missing values = no message (except price) was shown
 replace order_vaccine_persuasion=0 if order_vaccine_persuasio==. //RK:to not drop no message subjects
 tab order_vaccine_persuasion //added into next global 
+*/
+
+//creation of vars indicating which persuasive message was the 1st. 
+//o_ is order 
+//of_ is order = first
+//i_ is interaction
+
+gen o_prod_reputation=strpos(order_vaccine_persuasion, "1")
+gen o_efficiency=strpos(order_vaccine_persuasion, "2")
+gen o_safety=strpos(order_vaccine_persuasion, "3")
+gen o_other_want_it=strpos(order_vaccine_persuasion, "5") //no 4, there is a gap, be careful!
+gen o_scientific_authority=strpos(order_vaccine_persuasion, "6")
+gen o_ease_personal_restrictions=strpos(order_vaccine_persuasion, "7")
+gen o_tested=strpos(order_vaccine_persuasion, "8")
+
+global noprefix_vax_short "prod_reputation efficiency safety other_want_it scientific_authority ease_personal_restrictions tested"
+dis "$noprefix_vax_short"
+
+//order of persuasive msg:
+global o_vaccine_short "" //order of persuasive msg
+foreach word in $noprefix_vax_short {	
+	global o_vaccine_short "$o_vaccine_short o_`word'" //add created variable into the global 	
+}
+dis "$o_vaccine_short"
+
+//interaction: message was shown * order of persuasive msg
+global io_vaxshort "" 
+foreach manipulation in $noprefix_vax_short {
+	capture gen io_`manipulation'=v_`manipulation'*o_`manipulation'	
+	global io_vaxshort "$io_vaxshort io_`manipulation'" 	
+}
+dis "$io_vaxshort"
+//END: order of persuasive msg
 
 
-replace covid_hosp=0 if covid_hosp==.a
+
+//was persuasive msg shown the 1st:
+global fo_vaccine_short "" //if order of persuasive msg ==1
+foreach manipulation in $noprefix_vax_short {
+	gen fo_`manipulation'=o_`manipulation'==1 //creates first_order dummy if order of persuasive msg ==1	
+	global fo_vaccine_short "$fo_vaccine_short fo_`manipulation'" //add created variable into the global 	
+}
+dis "$fo_vaccine_short"
+
+//interaction: message was shown * was persuasive msg shown the 1st
+global ifo_vaxshort "" 
+foreach manipulation in $noprefix_vax_short {
+	capture gen ifo_`manipulation'=v_`manipulation'*fo_`manipulation'	
+	global ifo_vaxshort "$ifo_vaxshort ifo_`manipulation'" 	
+}
+dis "$ifo_vaxshort"
+//END: was persuasive msg shown the 1st
+
+
 
 /// TIME
 // define variable that slows percentile, by time 
 rename survey_finish_time time
 sort time
+sum time
 gen time_perc = _n/_N
+//drop if time_perc<0.05|time_perc>0.95
+replace time=time/60 //in minutes
+sum time
 //use it later during the robustness check, when results will be ready (add/remove 5% fastest participants)
 rename (p19_time p20_time p22_time p23_time p24_time p25_time p30cd_time p37_time) (time_risk time_worry time_control time_informed time_estimationscases time_estimationsdeath time_conspiracy time_v_persuasion)
 //do drop too quick subjects later
@@ -690,7 +749,7 @@ est table l_1 l_2 l_2 l_3 l_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p)
 ssc install tuples
 
 capture tuples $vaccine_vars, asis conditionals(!(8&9) !(8&10) !(9&10)) min(2) max(2)
-global Raman="YES"
+global Raman="YES" //Why Raman? I'm not a cause why tuples code doesnt work :\
 capture global Raman="`tuple1'"
 if "$Raman"!="YES"{
 save "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_after_tuples.dta", replace
@@ -700,15 +759,16 @@ use "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_after_tuple
 //use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_after_tuples.dta"
 
 
+//it stops the code, we coudnt have a code that runs only at Michal's PC, could you please re-write it?
  global int_manips ""
- forvalues i = 1/`ntuples' {
- display "`tuple`i''"
- tokenize "`tuple`i''"
+ forvalues i = 1/`ntuples' { 
+	 display "`tuple`i''"
+	 tokenize "`tuple`i''"
 
- gen vi_`i'=`1'*`2'	
- global int_manips "$int_manips vi_`i'" 	
+	 gen vi_`i'=`1'*`2'	
+	 global int_manips "$int_manips vi_`i'" 	
 
-// local iterms "`iterms' i.`1'*i.`2'"
+// local iterms "`iterms' i.`1'*i.`2'" 
  }
 
 
@@ -843,7 +903,14 @@ xi: quietly ologit v_decision $basic_for_int i.voting*v_prod_reputation i.voting
 est store o_8
 test  _IvotXv_pro_2 _IvotXv_pro_3 _IvotXv_pro_4 _IvotXv_pro_7 _IvotXv_pro_8 _IvotXv_pro_9 _IvotXv_saf_2 _IvotXv_saf_3 _IvotXv_saf_4 _IvotXv_saf_7 _IvotXv_saf_8 _IvotXv_saf_9
 
-est table o_5 o_6 o_7 o_8, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
+//check fgor order effects, added $ifo_vaxshort $io_vaxshort
+dis "$ifo_vaxshort $io_vaxshort"
+xi: ologit v_decision $basic_for_int  $ifo_vaxshort $io_vaxshort [pweight=waga], or
+est store o_9
+test $ifo_vaxshort $io_vaxshort
+ 
+
+est table o_5 o_6 o_7 o_8 o_9, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
 
 
 xi: ologit decision_change v_decision $basic_for_int [pweight=waga], or
