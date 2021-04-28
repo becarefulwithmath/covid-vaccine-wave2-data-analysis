@@ -144,9 +144,17 @@ gen final_who=FINALWHO
 replace final_who=auto_who if final_who==""
 
 replace final_why =subinword(final_why,"other","OTHER",.)
-global why_vars "safety_concerns efficacy_concerns poorly_tested not_afraid_virus just_no vaccine_too_costly conspiracy contraindications antibodies time_consuming doubts_no mistrust_no antivax safety_general others_safety normality just_yes belief_science no_alternatives morbidity_factors convenience doubts_yes mistrust_yes work money_pays_dislike money_pays_ok money_gets money_free money_other already_vac obligation INCONSISTENT OTHER nonsens"
+replace final_why =subinword(final_why,"money_other","MONEY_OTHER",.)
+replace final_why =subinword(final_why,"money_pays_ok","MONEY_PAYS_OK",.)
+replace final_why =subinword(final_why,"money_other","MONEY_OTHER",.)
+replace final_why =subinword(final_why,"money_pays_ok","MONEY_PAYS_OK",.)
 
-global who_vars "who_dont_know who_nothing who_family_general who_family_health who_doctor who_else who_more_info who_forced who_nonsens who_convenience who_choice who_money who_other who_own_health who_more_evidence_efficacy who_more_evidence_safety who_money_free who_money_price who_time who_already_vac who_more_evidence_inefficacy who_side_effects who_unavailability who_end_pandemics INCONSISTENT"
+
+global why_vars "safety_concerns efficacy_concerns poorly_tested not_afraid_virus just_no vaccine_too_costly conspiracy contraindications antibodies time_consuming doubts_no mistrust_no antivax safety_general others_safety normality just_yes belief_science no_alternatives morbidity_factors convenience doubts_yes mistrust_yes work money  already_vac obligation INCONSISTENT OTHER nonsens"
+
+global who_vars "who_dont_know who_nothing who_family who_doctor who_else who_more_info who_forced who_nonsens who_convenience who_choice who_money who_other who_own_health who_more_evidence_efficacy who_more_evidence_safety who_time who_already_vac who_more_evidence_inefficacy who_side_effects who_unavailability who_end_pandemics INCONSISTENT"
+
+
 
 foreach i in $why_vars{
 gen why_`i' = strpos(final_why,"`i'")
@@ -270,8 +278,8 @@ drop if no_manips
 
 
 /// WHY AND WHO by decision
-tabstat why_*, by(v_decision)
-tabstat who_*, by(v_decision)
+tabstat why_* [weight=waga], by(v_decision)
+tabstat who_* [weight=waga], by(v_decision)
 tab v_decision
 
 
@@ -714,7 +722,7 @@ label values sex sex_eng
 
 margins sex, at(age=(18(5)78))
 
-marginsplot, recast(line) ciopt(color(%50)) recastci(rarea) // xtitle("Wiek") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
+marginsplot, recast(line) ciopt(color(%50)) recastci(rarea) // xtitle("Wiek") ytitle("Odsetek badanych chcących się szczepić") ylabel(0.4 "40%" 0.5 "50%" 0.6 "60%" 0.7 "70%" 0.8 "80%") title("")
 // marginsplot, recast(line) recastci(rarea) 
 graph save Graph "margins-sex_age_eng.gph", replace
 
@@ -725,7 +733,7 @@ margins edu_short#voting_short
 //PL: marginsplot, recast(scatter) xtitle("wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
 marginsplot, recast(scatter) name(gr1,replace)
 margins edu_short#voting_short
-capture mplotoffset, recast(scatter)  offset(.1)
+capture mplotoffset, recast(scatter)  offset(.1) // xtitle("Wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
 graph save Graph "margins-edu_voting_eng.gph", replace
 
 
@@ -749,30 +757,43 @@ est table l_1 l_2 l_2 l_3 l_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p)
 ssc install tuples
 
 capture tuples $vaccine_vars, asis conditionals(!(8&9) !(8&10) !(9&10)) min(2) max(2)
-global Raman="YES" //Why Raman? I'm not a cause why tuples code doesnt work :\
-capture global Raman="`tuple1'"
-if "$Raman"!="YES"{
-save "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_after_tuples.dta", replace
-//save "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_after_tuples.dta", replace
-}
+dis "`tuple1'"
+dis `ntuples'
+global tuple_fails="YES"
+capture global tuple_fails="`tuple1'"
+
+
+if "$tuple_fails"=="YES" {
+ global int_manips ""
+
+local `ntuples'=42  // XXXXXXXXXXx could be wrong in wave 1, ask Michal when wave 1 do file done till this point
+ forvalues i = 1/`ntuples' { 
+	 global int_manips "$int_manips vi_`i'" 	
+ }
 use "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_after_tuples.dta"
-//use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_after_tuples.dta"
+}
 
 
-//it stops the code, we coudnt have a code that runs only at Michal's PC, could you please re-write it?
+if "$tuple_fails"!="YES"{
  global int_manips ""
  forvalues i = 1/`ntuples' { 
 	 display "`tuple`i''"
 	 tokenize "`tuple`i''"
-
 	 gen vi_`i'=`1'*`2'	
 	 global int_manips "$int_manips vi_`i'" 	
-
+save "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_after_tuples.dta", replace
 // local iterms "`iterms' i.`1'*i.`2'" 
  }
+}
+
+// use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_after_tuples.dta"
 
 
-dis "$int_manips"
+
+dis "$int_manips" // should be  vi_1 vi_2 vi_3... vi_42 (for wave 2)
+
+
+
 xi: logit vaxx_yes $basic_for_int  $int_manips [pweight=waga], or
 est store l_5
 test $int_manips
