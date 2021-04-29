@@ -108,7 +108,7 @@ save "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stat
 
 /// "REFERRED TO" CREATION
 /*
-import excel "3 szczepionka\classification of open ended questions\final_classification.xlsx", sheet("(old 20210416) referred to") firstrow clear
+import excel "3 szczepionka\classification of open ended questions\final_classification.xlsx", sheet("referred to") firstrow clear
 //import excel "3 szczepionka/classification of open ended questions/final_classification.xlsx", sheet("(old 20210416) referred to") firstrow clear
 destring ID, replace
 save "3 szczepionka\classification of open ended questions\referred_to.dta", replace
