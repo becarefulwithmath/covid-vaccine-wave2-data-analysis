@@ -284,7 +284,6 @@ tab v_decision
 
 
 ///DEMOGRAPHICS DATA CLEANING
-//wojewodstwo is ommited, because of no theoretical reason to include it
 gen male=sex==2
 rename (age) (age_category)
 gen age=2021-year
@@ -402,18 +401,18 @@ egen conspiracy_score=rowmean($conspiracy)
 
 gen consp_stats_high=conspiracy_sta==6|conspiracy_st==7
 sum consp_stats_high [weight=waga]
-//lets do general conspiracy score?
 
 /// VOTING
 rename m20 voting
 
 replace voting=0 if voting==.a
+replace voting=0 if voting==.
 replace voting=8 if voting==5|voting==6
 global voting "i.voting"
 
 gen voting_nl=voting
-label define stupid 1 "1" 2 "2" 3 "3" 4 "4" 5 "5" 6 "6" 7 "7" 8 "8" 9 "9"
-label values voting_nl stupid
+label define numbers 1 "1" 2 "2" 3 "3" 4 "4" 5 "5" 6 "6" 7 "7" 8 "8" 9 "9"
+label values voting_nl numbers
 
 tab voting voting_nl
 
@@ -637,12 +636,11 @@ rename (p19_time p20_time p22_time p23_time p24_time p25_time p30cd_time p37_tim
 // [P39] Who or what could change your decision regarding coronavirus vaccination?
 // [optional] [P21] What factors are major influences on the extent to which you are concerned about a coronavirus pandemic? 
 //will be classified and set of explanations will be produced.
-capture export excel respondent_id v_decision open_ended_v_reasoning P380 open_ended_v_influencer P390 using "C:\Users\johns_000\Desktop\openendedquestionsforclassification.xls", firstrow(variables) replace
+//capture export excel respondent_id v_decision open_ended_v_reasoning P380 open_ended_v_influencer P390 using "C:\Users\johns_000\Desktop\openendedquestionsforclassification.xls", firstrow(variables) replace
 //every explanation will be assosiated with a dummy variable
 rename p38 open_ended_v_reasoning
 rename p39 open_ended_v_influencer
 rename p21 open_ended_fear_why
-capture global explanations "..."//will be included into "contol" global
 
 
 //////////////////*************GLOBALS***************////////////
