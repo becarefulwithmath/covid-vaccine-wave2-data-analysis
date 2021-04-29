@@ -753,6 +753,7 @@ test $interactions
 
 est table l_1 l_2 l_2 l_3 l_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
 
+log using "debug.smcl", replace
 
 ssc install tuples
 
@@ -761,7 +762,7 @@ dis "`tuple1'"
 dis `ntuples'
 global tuple_fails="YES"
 capture global tuple_fails="`tuple1'"
-
+dis "$tuple_fails"
 
 if "$tuple_fails"=="YES" {
  global int_manips ""
@@ -777,21 +778,22 @@ use "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_after_tuple
 if "$tuple_fails"!="YES"{
  global int_manips ""
  forvalues i = 1/`ntuples' { 
-	 display "`tuple`i''"
-	 tokenize "`tuple`i''"
-	 gen vi_`i'=`1'*`2'	
-	 global int_manips "$int_manips vi_`i'" 	
-save "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_after_tuples.dta", replace
+capture	 display "`tuple`i''"
+capture	 tokenize "`tuple`i''"
+capture	 gen vi_`i'=`1'*`2'	
+capture	 global int_manips "$int_manips vi_`i'" 	
+
 // local iterms "`iterms' i.`1'*i.`2'" 
  }
+ save "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_after_tuples.dta", replace
 }
 
 // use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_after_tuples.dta"
 
 
-
 dis "$int_manips" // should be  vi_1 vi_2 vi_3... vi_42 (for wave 2)
 
+log close
 
 
 xi: logit vaxx_yes $basic_for_int  $int_manips [pweight=waga], or
