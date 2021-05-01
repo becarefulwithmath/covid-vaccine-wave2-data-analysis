@@ -176,7 +176,12 @@ sum who_*
 
 /// "REFERRED TO" VARS GENERATION
 
-rename (who_refered_to why_referred_to) (referred_to_who referred_to_why)
+capture rename who_refered_to referred_to_who 
+capture rename who_referred_to referred_to_who 
+capture rename referred_to_who referred_to_why
+
+
+/*
 global referred_to "referred_to_the_price referred_to_the_efficacy"
 gen whowhy_referred_to=referred_to_who+referred_to_why
 
@@ -186,7 +191,7 @@ replace ref_to_`i'=1 if ref_to_`i'>0
 }
 
 sum ref_to_*
-
+*/
 
 /// COMMENTS REVIEW, COUNT, %
 gen n_count=_N
@@ -276,12 +281,12 @@ ologit v_dec no_manips $vaccine_vars if no_manips | v_p_pay0==1
 
 drop if no_manips
 
-
+/*
 /// WHY AND WHO by decision
 tabstat why_* [weight=waga], by(v_decision)
 tabstat who_* [weight=waga], by(v_decision)
 tab v_decision
-
+*/
 
 ///DEMOGRAPHICS DATA CLEANING
 gen male=sex==2
@@ -647,7 +652,7 @@ rename p21 open_ended_fear_why
 global wealth "wealth_low wealth_high" //included into demogr
 global demogr "male age i.city_population secondary_edu higher_edu $wealth health_poor health_good $health_details tested_pos thinks_had covid_hospitalized covid_friends religious i.religious_freq status_unemployed status_pension status_student" 
 global demogr_no_ma "i.city_population $wealth health_poor health_good $health_details tested_pos thinks_had covid_hospitalized covid_friends religious i.religious_freq status_unemployed status_pension status_student"
-global demogr_int "male age higher_edu"
+global demogr_int "male age higher_edu" //RK: Michal, did you ommit secondary_edu?
 global emotions "e_happiness e_fear e_anger e_disgust e_sadness e_surprise"
 global risk "risk_overall risk_work risk_health"
 global worry "worry_covid worry_cold worry_unempl"
@@ -692,6 +697,10 @@ est store l_1
 // this global will later be changed!
 global basic_for_int "$vaccine_vars $demogr $voting_short $emotions $risk worry_covid $trust_dummies control_covid $informed conspiracy_score $covid_impact $health_advice"
 
+dis "$vaccine_vars"
+dis "$demogr"
+dis "$basic_for_int"
+
 logit vaxx_yes  $basic_for_int [pweight=waga], or
 test control_cov $informed conspiracy_score $covid_impact $health_advice
 
@@ -722,7 +731,7 @@ margins sex, at(age=(18(5)78))
 
 marginsplot, recast(line) ciopt(color(%50)) recastci(rarea) // xtitle("Wiek") ytitle("Odsetek badanych chcących się szczepić") ylabel(0.4 "40%" 0.5 "50%" 0.6 "60%" 0.7 "70%" 0.8 "80%") title("")
 // marginsplot, recast(line) recastci(rarea) 
-graph save Graph "margins-sex_age_eng.gph", replace
+graph save "3 szczepionka\20210310 data analysis (Arianda wave2)\margins-sex_age_eng.gph", replace
 
 label values edu_short e_s_eng
 label values voting_short v_s_eng
@@ -732,12 +741,17 @@ margins edu_short#voting_short
 marginsplot, recast(scatter) name(gr1,replace)
 margins edu_short#voting_short
 capture mplotoffset, recast(scatter)  offset(.1) // xtitle("Wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
-graph save Graph "margins-edu_voting_eng.gph", replace
+graph save "3 szczepionka\20210310 data analysis (Arianda wave2)\margins-edu_voting_eng.gph", replace
+
+capture save "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave1)\WNE2_N3000_before_tuples.dta", replace
+capture use "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave1)\WNE2_N3000_before_tuples.dta", replace
 
 
+global vv_plus "$vaccine_vars v_p_pay0"
+dis "$vv_plus"
 
 global interactions ""
-foreach manipulation in $vaccine_vars {
+foreach manipulation in $vv_plus {
 	foreach demogr in $demogr_int {
 	local abb=substr("`manipulation'",1,14)
 	gen i_`abb'_`demogr'=`abb'*`demogr'	
@@ -749,54 +763,34 @@ quietly xi:logit vaxx_yes $basic_for_int  $interactions [pweight=waga], or
 est store l_4
 test $interactions
 
-est table l_1 l_2 l_2 l_3 l_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
 
-log using "debug.smcl", replace
 
-ssc install tuples
 
-capture tuples $vaccine_vars, asis conditionals(!(8&9) !(8&10) !(9&10)) min(2) max(2)
-dis "`tuple1'"
-dis `ntuples'
-global tuple_fails="YES"
-capture global tuple_fails="`tuple1'"
-dis "$tuple_fails"
+est table l_1 l_2 l_3 l_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
 
-if "$tuple_fails"=="YES" {
- global int_manips ""
 
-local `ntuples'=42  // XXXXXXXXXXx could be wrong in wave 1, ask Michal when wave 1 do file done till this point
- forvalues i = 1/`ntuples' { 
-	 global int_manips "$int_manips vi_`i'" 	
- }
-use "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_after_tuples.dta"
+local counter=0
+
+global int_manips=""
+capture drop vvi_*
+foreach manipulation in $vv_plus {
+
+	foreach m2 in $vaccine_vars {
+	local counter=`counter'+1
+	gen vvi_`counter'=`manipulation'*`m2'	
+	label var vvi_`counter' "`manipulation'_`m2'"
+	global int_manips="$int_manips vvi_`counter'" //  `vvi_`counter''"
 }
-
-
-if "$tuple_fails"!="YES"{
- global int_manips ""
- forvalues i = 1/`ntuples' { 
-capture	 display "`tuple`i''"
-capture	 tokenize "`tuple`i''"
-capture	 gen vi_`i'=`1'*`2'	
-capture	 global int_manips "$int_manips vi_`i'" 	
-
-// local iterms "`iterms' i.`1'*i.`2'" 
- }
- save "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_after_tuples.dta", replace
 }
+dis "$int_manips"
 
-// use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_after_tuples.dta"
-
-
-dis "$int_manips" // should be  vi_1 vi_2 vi_3... vi_42 (for wave 2)
-
-log close
-
-
-xi: logit vaxx_yes $basic_for_int  $int_manips [pweight=waga], or
+xi: logit vaxx_yes $basic_for_int  vvi_* [pweight=waga], or
 est store l_5
 test $int_manips
+
+
+
+
 
 //check for interactions: vaccine price + income
 global price_wealth ""
@@ -892,7 +886,7 @@ test $interactions
 
 est table o_1 o_2 o_2 o_3 o_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
 
-xi: ologit v_decision $basic_for_int  $int_manips [pweight=waga], or
+xi: ologit v_decision $basic_for_int  vvi_* [pweight=waga], or
 est store o_5
 test $int_manips
 
@@ -909,6 +903,7 @@ foreach manipulation in $vaccine_vars {
 	global int_consp_manip "$int_consp_manip `abb'_conspiracy" 	
 }
 dis "$int_consp_manip"
+
 xi: ologit v_decision $basic_for_int  $int_consp_manip [pweight=waga], or
 est store o_7
 test $int_consp_manip
