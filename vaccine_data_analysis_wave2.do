@@ -176,12 +176,9 @@ sum who_*
 
 /// "REFERRED TO" VARS GENERATION
 
-capture rename who_refered_to referred_to_who 
-capture rename who_referred_to referred_to_who 
-capture rename referred_to_who referred_to_why
+rename who_referred_to referred_to_who 
+rename why_referred_to referred_to_why
 
-
-/*
 global referred_to "referred_to_the_price referred_to_the_efficacy"
 gen whowhy_referred_to=referred_to_who+referred_to_why
 
@@ -191,7 +188,6 @@ replace ref_to_`i'=1 if ref_to_`i'>0
 }
 
 sum ref_to_*
-*/
 
 /// COMMENTS REVIEW, COUNT, %
 gen n_count=_N
@@ -281,7 +277,7 @@ ologit v_dec no_manips $vaccine_vars if no_manips | v_p_pay0==1
 
 drop if no_manips
 
-/*
+
 /// WHY AND WHO by decision
 tabstat why_* [weight=waga], by(v_decision)
 tabstat who_* [weight=waga], by(v_decision)
