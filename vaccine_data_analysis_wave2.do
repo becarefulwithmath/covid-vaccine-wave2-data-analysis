@@ -284,6 +284,30 @@ tabstat who_* [weight=waga], by(v_decision)
 tab v_decision
 */
 
+/// correlation, factor analysis WHY AND WHO
+global why_no "why_safety_concerns why_efficacy_concerns why_poorly_tested why_not_afraid_virus why_just_no why_vaccine_too_costly why_conspiracy why_contraindications why_antibodies why_doubts_no why_mistrust_no why_antivax"
+factor $why_no if vaxx_yes==0
+
+global why_yes "why_safety_general why_others_safety why_normality why_just_yes why_belief_science why_no_alternatives why_morbidity_factors why_convenience why_doubts_yes why_money why_already_vac why_obligation"
+factor $why_yes if vaxx_yes
+
+global who_no "who_dont_know who_nothing who_family who_doctor who_else who_more_info who_forced who_money who_more_evidence_efficacy who_more_evidence_safety who_time" 
+factor $who_no if vaxx_yes==0
+
+global who_yes " who_dont_know who_nothing who_family who_doctor who_else who_more_info who_own_health who_more_evidence_inefficacy who_side_effects"
+factor $who_yes if vaxx_yes
+// i don't find them fascinating
+
+
+global who_no 
+pwcorr $who_yes $why_yes if vaxx_yes, sig
+pwcorr $who_no $why_no if vaxx_yes==0, sig
+
+pwcorr why_safety_con why_poorly why_just_no why_mistrust_no who_don who_nothi if vaxx_yes==0,  sig
+pwcorr why_safety_g why_others why_convenie why_normality who_dont who_nothing who_side, sig
+sum why_* who_* if vaxx_yes
+
+
 ///DEMOGRAPHICS DATA CLEANING
 gen male=sex==2
 rename (age) (age_category)
@@ -488,6 +512,7 @@ foreach i in $trust{
 tab `i'
 }
 
+ 
 capture drop trust_*_Y trust_*_N
 
 global trust_dummies ""
@@ -500,8 +525,8 @@ global trust_dummies "$trust_dummies `var'_Y `var'_N"
 global trust_short_dummies "trust_EU_N trust_gov_N trust_media_N trust_science_Y trust_science_N trust_doctors_Y trust_doctors_N"
 
 sum $trust_dummies
-
-
+gen gov_mistrust=trust_gov==3
+sum gov_mistrust [weight=waga]
 /// ORDER EFFECTS
 /*
 // robustness check: to add order effects for emotions
@@ -727,17 +752,17 @@ margins sex, at(age=(18(5)78))
 
 marginsplot, recast(line) ciopt(color(%50)) recastci(rarea) // xtitle("Wiek") ytitle("Odsetek badanych chcących się szczepić") ylabel(0.4 "40%" 0.5 "50%" 0.6 "60%" 0.7 "70%" 0.8 "80%") title("")
 // marginsplot, recast(line) recastci(rarea) 
-graph save "3 szczepionka\20210310 data analysis (Arianda wave2)\margins-sex_age_eng.gph", replace
+//graph save "3 szczepionka\20210310 data analysis (Arianda wave2)\margins-sex_age_eng.gph", replace
 
 label values edu_short e_s_eng
 label values voting_short v_s_eng
-ssc describe mplotoffset
+//ssc describe mplotoffset
 margins edu_short#voting_short
 //PL: marginsplot, recast(scatter) xtitle("wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
 marginsplot, recast(scatter) name(gr1,replace)
 margins edu_short#voting_short
 capture mplotoffset, recast(scatter)  offset(.1) // xtitle("Wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
-graph save "3 szczepionka\20210310 data analysis (Arianda wave2)\margins-edu_voting_eng.gph", replace
+//graph save "3 szczepionka\20210310 data analysis (Arianda wave2)\margins-edu_voting_eng.gph", replace
 
 capture save "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave1)\WNE2_N3000_before_tuples.dta", replace
 capture use "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave1)\WNE2_N3000_before_tuples.dta", replace
@@ -828,6 +853,11 @@ est store l_8
 test  _IvotXv_pro_2 _IvotXv_pro_3 _IvotXv_pro_4 _IvotXv_pro_7 _IvotXv_pro_8 _IvotXv_pro_9 _IvotXv_saf_2 _IvotXv_saf_3 _IvotXv_saf_4 _IvotXv_saf_7 _IvotXv_saf_8 _IvotXv_saf_9
 
 
+xi: logit vaxx_yes $basic_for_int  $ifo_vaxshort $io_vaxshort [pweight=waga], or
+est store l_9
+test  $ifo_vaxshort $io_vaxshort
+
+
 /*
 capture drop i_v*emo_*
 capture drop i_v*e_*
@@ -847,7 +877,7 @@ test $int_emo_manip
 */
 
 
-est table l_5 l_6 l_7 l_8, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
+est table l_5 l_6 l_7 l_8 l_9, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
 
 
 // m_3 m_4 m_5 m_6 m_7, b(%12.3f) var(20) star(.01 .05 .10) stats(N)
