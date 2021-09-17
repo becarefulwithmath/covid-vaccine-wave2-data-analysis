@@ -807,9 +807,9 @@ test $interactions
 
 
 
-
+///for the paper
 est table l_1 l_2 l_3 l_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
-
+coefplot l_1 , eform nolabels drop(_cons) xscale(log) xline(1) xtitle("odds ratio") graphregion(fcolor(white)) levels(95) //omitted 
 
 
 local counter=0
@@ -898,7 +898,7 @@ est store l_10
 test $int_emo_manip
 */
 
-
+///for the paper
 est table l_5 l_6 l_7 l_8 l_9, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
 
 
@@ -932,7 +932,10 @@ quietly xi: ologit v_decision $basic_for_int  $interactions [pweight=waga], or
 est store o_4
 test $interactions
 
+///for the paper
 est table o_1 o_2 o_2 o_3 o_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
+coefplot o_1 , eform nolabels drop(_cons) xscale(log) xline(1) xtitle("odds ratio") graphregion(fcolor(white)) levels(95) //omitted 
+
 
 xi: ologit v_decision $basic_for_int  vvi_* [pweight=waga], or
 est store o_5
@@ -973,7 +976,7 @@ xi: ologit v_decision $basic_for_int  $ifo_vaxshort $io_vaxshort [pweight=waga],
 est store o_9
 test $ifo_vaxshort $io_vaxshort
  
-
+///for the paper
 est table o_5 o_6 o_7 o_8 o_9, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
 
 
