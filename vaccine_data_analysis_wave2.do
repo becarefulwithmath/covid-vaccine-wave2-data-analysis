@@ -16,6 +16,7 @@ clear all
 capture set scheme burd
 //INTSALATION:
 //capture ssc install tabstatmat
+//ssc install coefplot
 
 
 capture cd "G:\Shared drives\Koronawirus\studies"
@@ -128,8 +129,9 @@ save "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stat
 */
 
 /// WORKING FOLDER AND DATA
-use "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why_refto.dta", clear
-use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_covid_stats_who_why_refto.dta", clear
+capture use "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why_refto.dta", clear
+capture use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_covid_stats_who_why_refto.dta", clear
+use "G:\Shared drives\Koronawirus\studies\3 szczepionka (Vaccines wave 1 and 2)\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why_refto.dta"
 
 /// GENERATING VOIEVODSHIP-SPEC VARS
 gen infected_y_pc=infected_y/population*1000
@@ -203,12 +205,12 @@ display "% of records with comments: " `comment'_count_percent
 
 
 /// VACCINE PART DATA CLEANING
-rename (p37_1_r1	p37_1_r2	p37_1_r3		p37_1_r5	p37_1_r6	p37_1_r7 p37_1_r8_r8	p37_8_r1	p37_8_r2	p37_8_r3	p37_8_r4	p37) (v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested	v_p_pay0	v_p_gets70	v_p_pays10	v_p_pays70	v_decision) 
-global vaccine_vars "v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested	v_p_gets70	v_p_pays10	v_p_pays70" // this refers to the previous wave: i leave out scarcity -- sth that supposedly everybody knows. we can't estimate all because of ariadna's error anyway
-global vaccine_short "v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions v_tested"
+rename (p37_1_r1	p37_1_r2	p37_1_r3		p37_1_r5	p37_1_r6	p37_1_r7 p37_1_r8_r8	p37_8_r1	p37_8_r2	p37_8_r3	p37_8_r4	p37) (v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_vax_passport v_tested	v_p_pay0	v_p_gets70	v_p_pays10	v_p_pays70	v_decision) 
+global vaccine_vars "v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_vax_passport v_tested	v_p_gets70	v_p_pays10	v_p_pays70" // this refers to the previous wave: i leave out scarcity -- sth that supposedly everybody knows. we can't estimate all because of ariadna's error anyway
+global vaccine_short "v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_vax_passport v_tested"
 global prices "v_p_gets70	v_p_pays10	v_p_pays70"
 
-label define v_dec_eng 1 "certainly not" 2 "rather not" 3 "rather yes" 4 "certainly yes"
+label define v_dec_eng 1 "definitely not" 2 "rather not" 3 "rather yes" 4 "definitely yes"
 label values v_decision v_dec_eng
 
 sort v_decision
@@ -237,19 +239,19 @@ drop if INCO
 
 
 
-gen vaxx_cert_yes =v_dec==4
+gen vaxx_def_yes =v_dec==4
 gen vaxx_rather_yes =v_dec==3
 gen vaxx_rather_no =v_dec==2
-gen vaxx_cert_no =v_dec==1
+gen vaxx_def_no =v_dec==1
 
-gen vaxx_yes=vaxx_cert_yes+vaxx_rather_yes
+gen vaxx_yes=vaxx_def_yes+vaxx_rather_yes
 
 tabstat vaxx_yes [weight=waga], statistics( mean ) by(woj)
 
-sum vaxx_cert_yes [weight=waga]
+sum vaxx_def_yes [weight=waga]
 sum vaxx_rather_yes [weight=waga]
 sum vaxx_rather_no [weight=waga]
-sum vaxx_cert_no [weight=waga]
+sum vaxx_def_no [weight=waga]
 
 
 sum vaxx_yes [weight=waga]
@@ -447,7 +449,7 @@ replace voting_short=2 if voting==3
 
 // OLD, OBSOLETE:
 // label define v_s_OLD 1 "Zjedn. Praw." 2 "KO, PL2050 SH" 4 "Lewica" 7 "Konfederacja" 9 "inna lub żadna", replace
-label define v_s_eng_OLD 1 "PiS(ruling, right)" 2 "centre" 4 "left" 7 "ultra-right" 9 "none or other", replace
+label define v_s_eng_OLD 1 "right (ruling party)" 2 "centre" 4 "left" 7 "ultra-right" 9 "none or other", replace
 label values voting_short v_s_eng_OLD
 tab voting_short
 
@@ -509,9 +511,9 @@ rename (trust_r1	trust_r2	trust_r3	trust_r4	trust_r5	trust_r6	trust_r7) (trust_E
 global trust "trust_EU	trust_gov	trust_neigh	trust_doctors	trust_media	trust_family	trust_science" //included into demogr
 
 foreach i in $trust{
-tab `i'
-}
+tab `i' [aw=waga] 
 
+}
  
 capture drop trust_*_Y trust_*_N
 
@@ -523,6 +525,8 @@ global trust_dummies "$trust_dummies `var'_Y `var'_N"
 }
 
 global trust_short_dummies "trust_EU_N trust_gov_N trust_media_N trust_science_Y trust_science_N trust_doctors_Y trust_doctors_N"
+global trust_dum_nodocs "trust_EU_N trust_EU_Y trust_gov_N trust_gov_Y trust_media_N trust_media_Y trust_science_Y trust_science_N trust_family_Y trust_family_N trust_neigh_Y trust_neigh_N"
+
 
 sum $trust_dummies
 gen gov_mistrust=trust_gov==3
@@ -601,10 +605,10 @@ gen o_efficiency=strpos(order_vaccine_persuasion, "2")
 gen o_safety=strpos(order_vaccine_persuasion, "3")
 gen o_other_want_it=strpos(order_vaccine_persuasion, "5") //no 4, there is a gap, be careful!
 gen o_scientific_authority=strpos(order_vaccine_persuasion, "6")
-gen o_ease_personal_restrictions=strpos(order_vaccine_persuasion, "7")
+gen o_vax_passport=strpos(order_vaccine_persuasion, "7")
 gen o_tested=strpos(order_vaccine_persuasion, "8")
 
-global noprefix_vax_short "prod_reputation efficiency safety other_want_it scientific_authority ease_personal_restrictions tested"
+global noprefix_vax_short "prod_reputation efficiency safety other_want_it scientific_authority vax_passport tested"
 dis "$noprefix_vax_short"
 
 //order of persuasive msg:
@@ -693,8 +697,8 @@ tab `i'
 }
 global covid_impact "subj_est_cases_ln subj_est_death_l"
 //global order_effects ""
-// DEFINED (UND UPDATED TO NEW VERSION) BEFORE! global vaccine_vars "v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_ease_personal_restrictions	v_p_gets70	v_p_pays10	v_p_pays70" // i leave out scarcity -- sth that supposedly everybody knows. we can't estimate all because of ariadna's error anyway
-// global vaccine_short "v_prod_reputation	v_efficiency	v_safety	v_scarcity	v_other_want_it	v_scientific_authority	v_ease_personal_restrictions"
+// DEFINED (UND UPDATED TO NEW VERSION) BEFORE! global vaccine_vars "v_prod_reputation	v_efficiency	v_safety		v_other_want_it	v_scientific_authority	v_vax_passport	v_p_gets70	v_p_pays10	v_p_pays70" // i leave out scarcity -- sth that supposedly everybody knows. we can't estimate all because of ariadna's error anyway
+// global vaccine_short "v_prod_reputation	v_efficiency	v_safety	v_scarcity	v_other_want_it	v_scientific_authority	v_vax_passport"
 global prices "v_p_gets70	v_p_pays10	v_p_pays70"
 
 
@@ -750,7 +754,7 @@ label values sex sex_eng
 
 margins sex, at(age=(18(5)78))
 
-marginsplot, recast(line) ciopt(color(%50)) recastci(rarea) // xtitle("Wiek") ytitle("Odsetek badanych chcących się szczepić") ylabel(0.4 "40%" 0.5 "50%" 0.6 "60%" 0.7 "70%" 0.8 "80%") title("")
+marginsplot, recast(line) ciopt(color(%50)) recastci(rarea) xtitle("Age") ytitle("Probability that the responder is willing to get vaccinated") ylabel(0.4 "40%" 0.5 "50%" 0.6 "60%" 0.7 "70%" 0.8 "80%") title("")
 // marginsplot, recast(line) recastci(rarea) 
 //graph save "3 szczepionka\20210310 data analysis (Arianda wave2)\margins-sex_age_eng.gph", replace
 
@@ -761,8 +765,25 @@ margins edu_short#voting_short
 //PL: marginsplot, recast(scatter) xtitle("wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
 marginsplot, recast(scatter) name(gr1,replace)
 margins edu_short#voting_short
-capture mplotoffset, recast(scatter)  offset(.1) // xtitle("Wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
+capture mplotoffset, recast(scatter)  offset(.1) xtitle("Education") ytitle("Probability that the responder is willing to get vaccinated") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
 //graph save "3 szczepionka\20210310 data analysis (Arianda wave2)\margins-edu_voting_eng.gph", replace
+
+// for the presentation for the doctors
+/*
+gen trust_doc_coll=trust_doctors
+label define tdc 1 "Tak, duże" 2 "Tak, umiarkowane (lub b.z.)" 3 "Nie"
+label values trust_doc_col tdc
+replace trust_doc_coll=2 if trust_doctors==4 // nie mam zdania -> umiarkowane
+xi: logit vaxx_yes sex##c.age edu_short##trust_doc_coll $cases_vars $vaccine_vars $trust_dum_nodocs $demogr_no_ma  $emotions $risk worry_covid control_covid $informed conspiracy_score  $covid_impact $health_advice [pweight=waga]
+margins edu_short#trust_doc_coll
+
+marginsplot, recast(scatter) xtitle("wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
+capture mplotoffset, recast(scatter)  offset(.1) // xtitle("Wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
+graph save "3 szczepionka/20210310 data analysis (Arianda wave2)/margins-docs.gph", replace
+*/
+
+label values sex sex_eng
+
 
 capture save "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave1)\WNE2_N3000_before_tuples.dta", replace
 capture use "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka\20210310 data analysis (Arianda wave1)\WNE2_N3000_before_tuples.dta", replace
@@ -788,6 +809,7 @@ test $interactions
 
 
 est table l_1 l_2 l_3 l_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
+
 
 
 local counter=0
@@ -968,8 +990,8 @@ prtest ref_to_referred_to_the_price, by(v_p_pay0) // ok
 prtest why_vaccine_too, by(v_p_pays70) // ok
 
 prtest ref_to_referred_to_the_e if vaxx_yes, by(v_efficiency) // right direction, but not sig
-prtest why_conv if vaxx_yes, by(v_ease_personal_restrictions) // ok
-prtest why_conv, by(v_ease_personal_restrictions) // ok
+prtest why_conv if vaxx_yes, by(v_vax_passport) // ok
+prtest why_conv, by(v_vax_passport) // ok
 
 prtest why_norm if vaxx_yes, by(v_scientific_authority) // ok
 
