@@ -1017,11 +1017,12 @@ tab wave
 tab append_check
 drop append_check
 
-global demogry_vars "sex city_population religious_initial religious_freq male age age2 elementary_edu secondary_edu higher_edu wealth_low wealth_high health_poor health_good religious_often status_unemployed status_pension status_student"
+global demogry_vars "sex city_population male age elementary_edu secondary_edu higher_edu wealth_low wealth_high health_poor health_good religious_often status_unemployed status_pension status_student"
 
-tabstat wave v_decision vaxx_yes $demogry_vars [weight=waga], by(wave)
+tabstat v_decision vaxx_yes $demogry_vars [weight=waga], by(wave)
+//asdoc tabstat $demogry_vars, stat(min max mean sd median p1 p99 tstat) by(wave) replace
 
-ologit wave $demogry_vars [pweight=waga], or //no significant predictors of wave at the 1% sig level except of status_pension
+//ologit wave $demogry_vars [pweight=waga], or //no significant predictors of wave at the 1% sig level except of age status_pension
 
 foreach variable in $demogry_vars {
 tabstat `variable', by(wave)
@@ -1030,6 +1031,3 @@ kwallis `variable', by(wave)
 
 ttest age, by(wave)
 ttest age2, by(wave)
-
-
-
