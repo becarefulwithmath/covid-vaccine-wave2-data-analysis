@@ -456,7 +456,7 @@ tab voting_short
 recode voting_short (1=3) (2=2) (4=1) (7=4) (9=5)
 
 // NEW, TO HAVE LEFT ON THE LEFT ETC.
-label define v_s_eng 3 "PiS(ruling, right)" 2 "centre" 1 "left" 4 "ultra-right" 5 "none or other", replace
+label define v_s_eng 3 "right (ruling party)" 2 "centre" 1 "left" 4 "ultra-right" 5 "none or other", replace
 label values voting_short v_s_eng
 
 tab voting_sh
@@ -763,7 +763,7 @@ label values voting_short v_s_eng
 //ssc describe mplotoffset
 margins edu_short#voting_short
 //PL: marginsplot, recast(scatter) xtitle("wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
-marginsplot, recast(scatter) name(gr1,replace)
+//marginsplot, recast(scatter) name(gr1,replace)
 margins edu_short#voting_short
 capture mplotoffset, recast(scatter)  offset(.1) xtitle("Education") ytitle("Probability that the responder is willing to get vaccinated") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
 //graph save "3 szczepionka\20210310 data analysis (Arianda wave2)\margins-edu_voting_eng.gph", replace
@@ -809,7 +809,7 @@ test $interactions
 
 ///for the paper
 est table l_1 l_2 l_3 l_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
-coefplot l_1 , eform nolabels drop(_cons) xscale(log) xline(1) xtitle("odds ratio") graphregion(fcolor(white)) levels(95) //omitted 
+coefplot l_1 , eform nolabels drop(_cons) xscale(log) xline(1) xtitle("Odds ratio") graphregion(fcolor(white)) levels(95) //omitted 
 
 
 local counter=0
@@ -934,7 +934,7 @@ test $interactions
 
 ///for the paper
 est table o_1 o_2 o_2 o_3 o_4, b(%12.3f) var(20) star(.01 .05 .10) stats(N r2_p) eform
-coefplot o_1 , eform nolabels drop(_cons) xscale(log) xline(1) xtitle("odds ratio") graphregion(fcolor(white)) levels(95) //omitted 
+coefplot o_1 , eform nolabels drop(_cons) xscale(log) xline(1) xtitle("Odds ratio") graphregion(fcolor(white)) levels(95) //omitted 
 
 
 xi: ologit v_decision $basic_for_int  vvi_* [pweight=waga], or
@@ -1004,5 +1004,32 @@ prtest why_poor, by(v_tested)
 prtest why_safety_gen if vaxx_yes, by(v_safety)
 
 
-//KAPPA calculation
+//KAPPA calculation in other dofile
+
+//merge data (our main dependent variable and demographics vars) of wave1 with wave2 and run non-parametric test
+keep v_decision vaxx_yes ID sex age_category city_population year region_id edu risk_overall risk_work risk_health  control_covid control_cold control_unempl informed_covid informed_cold informed_unempl mask_wearing conspiracy_general_info conspiracy_stats conspiracy_excuse had_covid covid_hospitalized covid_friends_hospital_initial income health_state religious_initial religious_freq empl_status voting waga region male age age2 elementary_edu secondary_edu higher_edu edu_short wealth_low wealth_high health_poor health_good tested_pos_covid thinks_had_covid covid_friends no_covid_friends covid_friends_hospital covid_friends_nohospital religious religious_often status_unemployed status_pension status_student conspiracy_score consp_stats_high 
+
+gen wave=2
+
+append using "G:\Shared drives\Koronawirus\studies\3 szczepionka (Vaccines wave 1 and 2)\20210310 data analysis (Arianda wave2)\wave1_truncated_data_for_demogr_comparison.dta", generate(append_check)
+
+tab wave
+tab append_check
+drop append_check
+
+global demogry_vars "sex city_population religious_initial religious_freq male age age2 elementary_edu secondary_edu higher_edu wealth_low wealth_high health_poor health_good religious_often status_unemployed status_pension status_student"
+
+tabstat wave v_decision vaxx_yes $demogry_vars [weight=waga], by(wave)
+
+ologit wave $demogry_vars [pweight=waga], or //no significant predictors of wave at the 1% sig level except of status_pension
+
+foreach variable in $demogry_vars {
+tabstat `variable', by(wave)
+kwallis `variable', by(wave)
+}
+
+ttest age, by(wave)
+ttest age2, by(wave)
+
+
 
