@@ -449,14 +449,14 @@ replace voting_short=2 if voting==3
 
 // OLD, OBSOLETE:
 // label define v_s_OLD 1 "Zjedn. Praw." 2 "KO, PL2050 SH" 4 "Lewica" 7 "Konfederacja" 9 "inna lub żadna", replace
-label define v_s_eng_OLD 1 "right (ruling party)" 2 "centre" 4 "left" 7 "ultra-right" 9 "none or other", replace
+label define v_s_eng_OLD 1 "right (ruling party)" 2 "center" 4 "left" 7 "ultra-right" 9 "none or other", replace
 label values voting_short v_s_eng_OLD
 tab voting_short
 
 recode voting_short (1=3) (2=2) (4=1) (7=4) (9=5)
 
 // NEW, TO HAVE LEFT ON THE LEFT ETC.
-label define v_s_eng 3 "right (ruling party)" 2 "centre" 1 "left" 4 "ultra-right" 5 "none or other", replace
+label define v_s_eng 3 "right (ruling party)" 2 "center" 1 "left" 4 "ultra-right" 5 "none or other", replace
 label values voting_short v_s_eng
 
 tab voting_sh
@@ -754,7 +754,7 @@ label values sex sex_eng
 
 margins sex, at(age=(18(5)78))
 
-marginsplot, recast(line) ciopt(color(%50)) recastci(rarea) xtitle("Age") ytitle("Probability that the responder is willing to get vaccinated") ylabel(0.4 "40%" 0.5 "50%" 0.6 "60%" 0.7 "70%" 0.8 "80%") title("")
+marginsplot, recast(line) ciopt(color(%50)) recastci(rarea) xtitle("Age") ytitle("Probability that the respondent is willing to get vaccinated") ylabel(0.4 "40%" 0.5 "50%" 0.6 "60%" 0.7 "70%" 0.8 "80%") title("")
 // marginsplot, recast(line) recastci(rarea) 
 //graph save "3 szczepionka\20210310 data analysis (Arianda wave2)\margins-sex_age_eng.gph", replace
 
@@ -765,7 +765,7 @@ margins edu_short#voting_short
 //PL: marginsplot, recast(scatter) xtitle("wykształcenie") ytitle("Odsetek badanych chcących się szczepić") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
 //marginsplot, recast(scatter) name(gr1,replace)
 margins edu_short#voting_short
-capture mplotoffset, recast(scatter)  offset(.1) xtitle("Education") ytitle("Probability that the responder is willing to get vaccinated") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
+capture mplotoffset, recast(scatter)  offset(.1) xtitle("Education") ytitle("Probability that the respondent is willing to get vaccinated") ylabel(0 "0%" 0.2 "20%"  0.4 "40%" 0.6 "60%" 0.8 "80%" ) title("")
 //graph save "3 szczepionka\20210310 data analysis (Arianda wave2)\margins-edu_voting_eng.gph", replace
 
 // for the presentation for the doctors
@@ -1017,7 +1017,7 @@ tab wave
 tab append_check
 drop append_check
 
-global demogry_vars "sex city_population male age elementary_edu secondary_edu higher_edu wealth_low wealth_high health_poor health_good religious_often status_unemployed status_pension status_student"
+global demogry_vars "v_decision sex city_population male age elementary_edu secondary_edu higher_edu wealth_low wealth_high health_poor health_good religious_often status_unemployed status_pension status_student"
 
 tabstat v_decision vaxx_yes $demogry_vars [weight=waga], by(wave)
 //asdoc tabstat $demogry_vars, stat(min max mean sd median p1 p99 tstat) by(wave) replace
@@ -1025,9 +1025,13 @@ tabstat v_decision vaxx_yes $demogry_vars [weight=waga], by(wave)
 //ologit wave $demogry_vars [pweight=waga], or //no significant predictors of wave at the 1% sig level except of age status_pension
 
 foreach variable in $demogry_vars {
-tabstat `variable', by(wave)
-kwallis `variable', by(wave)
+//tabstat `variable', by(wave)
+//kwallis `variable', by(wave)
+tabulate `variable' wave, chi2 exact
+ranksum `variable', by(wave)
 }
+
+
 
 ttest age, by(wave)
 ttest age2, by(wave)
