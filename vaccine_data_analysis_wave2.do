@@ -16,7 +16,7 @@ clear all
 capture set scheme burd
 //INTSALATION:
 //capture ssc install tabstatmat
-//ssc install coefplot
+// ssc install coefplot
 
 
 capture cd "G:\Shared drives\Koronawirus\studies"
@@ -131,7 +131,8 @@ save "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stat
 /// WORKING FOLDER AND DATA
 capture use "3 szczepionka\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why_refto.dta", clear
 capture use "3 szczepionka/20210310 data analysis (Arianda wave2)/WNE2_N3000_covid_stats_who_why_refto.dta", clear
-use "G:\Shared drives\Koronawirus\studies\3 szczepionka (Vaccines wave 1 and 2)\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why_refto.dta"
+capture use "G:\Shared drives\Koronawirus\studies\3 szczepionka (Vaccines wave 1 and 2)\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why_refto.dta"
+capture use "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka (Vaccines wave 1 and 2)\20210310 data analysis (Arianda wave2)\WNE2_N3000_covid_stats_who_why_refto.dta"
 
 /// GENERATING VOIEVODSHIP-SPEC VARS
 gen infected_y_pc=infected_y/population*1000
@@ -1011,7 +1012,8 @@ keep v_decision vaxx_yes ID sex age_category city_population year region_id edu 
 
 gen wave=2
 
-append using "G:\Shared drives\Koronawirus\studies\3 szczepionka (Vaccines wave 1 and 2)\20210310 data analysis (Arianda wave2)\wave1_truncated_data_for_demogr_comparison.dta", generate(append_check)
+capture append using "G:\Shared drives\Koronawirus\studies\3 szczepionka (Vaccines wave 1 and 2)\20210310 data analysis (Arianda wave2)\wave1_truncated_data_for_demogr_comparison.dta", generate(append_check)
+capture append using "G:\Dyski współdzielone\Koronawirus\studies\3 szczepionka (Vaccines wave 1 and 2)\20210310 data analysis (Arianda wave2)\wave1_truncated_data_for_demogr_comparison.dta", generate(append_check)
 
 tab wave
 tab append_check
@@ -1031,7 +1033,7 @@ tabulate `variable' wave, chi2 exact
 ranksum `variable', by(wave)
 }
 
-
-
+ranksum v_decision [pweight=waga], by(wave)
+tab wave v_decision, row
 ttest age, by(wave)
 ttest age2, by(wave)
